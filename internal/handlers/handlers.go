@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"clipping-bot/internal/commands/account"
 	"clipping-bot/internal/config"
 	"clipping-bot/internal/discord"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log/slog"
 	"strings"
@@ -38,14 +40,15 @@ func MessageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	//guildID := discord.SearchGuildByChannelID(m.ChannelID)
 	//v := music.VoiceInstances[guildID]
 	cmd := strings.Split(m.Content, " ") //	Splitting command into string slice
+	fmt.Print(cmd)
 
 	switch cmd[0] {
 	case prefix + "help":
 		discord.SendChannelMessage(m.ChannelID, "pomagaj!!")
 	case prefix + "ping":
 		discord.SendChannelMessage(m.ChannelID, "Pong!")
-	//case prefix + "card":
-	//	commands.PostCard(cmd, m)
+	//case prefix + "add-account":
+	//	account.AddAccount(m.ChannelID, cmd[1], cmd[2])
 	//case prefix + "dice":
 	//	commands.RollDice(cmd, m)
 	//case prefix + "insult":
@@ -66,5 +69,17 @@ func MessageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	//	chess.Menu(cmd[1:], s, m)
 	default:
 		return
+	}
+}
+
+// Handles slash commands
+func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if i.Type != discordgo.InteractionApplicationCommand {
+		return
+	}
+
+	switch i.ApplicationCommandData().Name {
+	case "add-account":
+		account.AddAccount(s, i)
 	}
 }

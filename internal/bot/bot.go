@@ -20,6 +20,7 @@ func Start() {
 	discord.InitSession()
 	addHandlers()
 	discord.InitConnection()
+	discord.RegisterCommands()
 
 	fmt.Println("Bot is running. Press Ctrl + C to exit.")
 	sc := make(chan os.Signal, 1)
@@ -29,4 +30,6 @@ func Start() {
 
 func addHandlers() {
 	discord.Session.AddHandler(handlers.MessageCreateHandler)
+	discord.Session.AddHandler(handlers.InteractionCreateHandler)
+
 }
