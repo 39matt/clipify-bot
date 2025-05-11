@@ -26,6 +26,7 @@ func AddAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				Content: fmt.Sprintf("You already have one pending verification! Please finish the verification with **%s** on **%s**", models.Verifications[i.Member.User.ID].Username, models.Verifications[i.Member.User.ID].Platform),
 			},
 		})
+		return
 	}
 
 	verificationCode := generateRandomNumber()
@@ -38,7 +39,7 @@ func AddAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("Please add **%s** to your %s account bio, then use `/verify-account` to complete verification.", verificationCode, platform),
+			Content: fmt.Sprintf("Please add **%s** to your **%s** %s account bio, then use `/verify-account` to complete verification.", verificationCode, accountname, platform),
 		},
 	})
 }

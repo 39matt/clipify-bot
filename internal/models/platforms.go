@@ -5,20 +5,11 @@ import "github.com/bwmarrin/discordgo"
 type Platform string
 
 const (
-	PlatformYouTube Platform = "youtube"
-	PlatformTwitch  Platform = "twitch"
-	PlatformTikTok  Platform = "tiktok"
+	PlatformTikTok  Platform = "TikTok"
+	PlatformYouTube Platform = "YouTube"
 )
 
 var PlatformChoices = []*discordgo.ApplicationCommandOptionChoice{
-	{
-		Name:  "YouTube",
-		Value: string(PlatformYouTube),
-	},
-	{
-		Name:  "Twitch",
-		Value: string(PlatformTwitch),
-	},
 	{
 		Name:  "TikTok",
 		Value: string(PlatformTikTok),

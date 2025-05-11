@@ -81,5 +81,7 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 	switch i.ApplicationCommandData().Name {
 	case "add-account":
 		account.AddAccount(s, i)
+	case "verify-account":
+		account.VerifyAccount(s, i)
 	}
 }

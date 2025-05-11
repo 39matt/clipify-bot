@@ -15,6 +15,7 @@ type configuration struct {
 	BotGuildJoinMessage string
 	DiscordToken        string
 	YoutubeApiKey       string
+	RapidApiKey         string
 }
 
 const APP_ENVIRONMENT_LOCAL string = "LOCAL"
@@ -38,6 +39,7 @@ func Load() {
 		BotGuildJoinMessage: os.Getenv("BOT_GUILD_JOIN_MESSAGE"),
 		DiscordToken:        os.Getenv("DISCORD_TOKEN"),
 		YoutubeApiKey:       os.Getenv("YOUTUBE_API_KEY"),
+		RapidApiKey:         os.Getenv("RAPIDAPI_TIKTOK_API_KEY"),
 	}
 }
 
@@ -75,6 +77,6 @@ func GetDiscordToken() string {
 	return config.DiscordToken
 }
 
-func GetYoutubeApiKey() string {
-	return config.YoutubeApiKey
+func GetRapidApiKey() string {
+	return config.RapidApiKey
 }

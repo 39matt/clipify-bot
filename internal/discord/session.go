@@ -1,17 +1,16 @@
 package discord
 
 import (
+	"clipping-bot/internal/config"
 	"clipping-bot/internal/models"
 	"fmt"
 	"log/slog"
-
-	"clipping-bot/internal/config"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 var (
-	commands = []*discordgo.ApplicationCommand{
+	commandList = []*discordgo.ApplicationCommand{
 		{
 			Name:        "add-account",
 			Description: "Add a new account",
@@ -30,6 +29,10 @@ var (
 					Required:    true,
 				},
 			},
+		},
+		{
+			Name:        "verify-account",
+			Description: "Check if bio has the verification code",
 		},
 	}
 )
@@ -54,8 +57,9 @@ func InitConnection() {
 }
 
 func RegisterCommands() {
-	for _, v := range commands {
-		_, err := Session.ApplicationCommandCreate(Session.State.User.ID, "", v) // "" means global command
+	// Register new commands
+	for _, v := range commandList {
+		_, err := Session.ApplicationCommandCreate(Session.State.User.ID, "", v)
 		if err != nil {
 			fmt.Printf("Cannot create '%v' command: %v\n", v.Name, err)
 		}
