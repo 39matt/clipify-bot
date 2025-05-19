@@ -81,5 +81,7 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 		account.AddAccount(s, i)
 	case "verify-account":
 		verification.VerifyAccount(s, i)
+	case "remove-verification":
+		verification.RemoveVerification(s, i)
 	}
 }

@@ -34,6 +34,10 @@ var (
 			Name:        "verify-account",
 			Description: "Check if bio has the verification code",
 		},
+		{
+			Name:        "remove-verification",
+			Description: "Remove active verification",
+		},
 	}
 )
 
