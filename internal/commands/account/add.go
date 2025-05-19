@@ -1,13 +1,16 @@
 package account
 
 import (
-	"clipping-bot/internal/models"
+	"clipping-bot/internal/firebase"
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"log/slog"
 	"math/rand"
 )
 
 func AddAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	ctx := context.Background()
 	var platform, accountname string
 	for _, option := range i.ApplicationCommandData().Options {
 		switch option.Name {
@@ -18,32 +21,27 @@ func AddAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 
-	_, exists := models.Verifications[i.Member.User.ID]
-	if exists {
+	verificationCode := rand.Intn(900000) + 100000
+	doc, err := firebase.AddVerification(ctx, i.Member.User.ID, accountname, platform, verificationCode)
+	if err != nil {
+		slog.Error("error adding verification", "error", err)
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("You already have one pending verification! Please finish the verification with **%s** on **%s**", models.Verifications[i.Member.User.ID].Username, models.Verifications[i.Member.User.ID].Platform),
+				Content: err.Error(),
 			},
 		})
 		return
 	}
-
-	verificationCode := generateRandomNumber()
-	models.Verifications[i.Member.User.ID] = models.PendingVerification{
-		Code:     verificationCode,
-		Platform: platform,
-		Username: accountname,
+	snapshot, err := doc.Get(ctx)
+	if err != nil {
+		slog.Error("error getting verification", "error", err)
 	}
-
+	data := snapshot.Data()
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("Please add **%s** to your **%s** %s account bio, then use `/verify-account` to complete verification.", verificationCode, accountname, platform),
+			Content: fmt.Sprintf("Please add **%d** to your **%s** %s account bio, then use `/verify-account` to complete verification.", data["code"], data["accountname"], data["platform"]),
 		},
 	})
-}
-
-func generateRandomNumber() string {
-	return fmt.Sprintf("%06d", rand.Intn(1000000))
 }

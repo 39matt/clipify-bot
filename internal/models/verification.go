@@ -1,9 +1,11 @@
 package models
 
-type PendingVerification struct {
-	Code     string
-	Platform string
-	Username string
-}
+import "time"
 
-var Verifications = map[string]PendingVerification{}
+type PendingVerification struct {
+	Code        int       `json:"code"`
+	Platform    string    `json:"platform"`
+	AccountName string    `json:"accountname"`
+	DiscordID   string    `json:"discordid"`
+	CreatedAt   time.Time `json:"createdat"`
+}

@@ -3,6 +3,7 @@ package bot
 import (
 	"clipping-bot/internal/config"
 	"clipping-bot/internal/discord"
+	"clipping-bot/internal/firebase"
 	"clipping-bot/internal/handlers"
 	"fmt"
 	"os"
@@ -18,6 +19,10 @@ func Start() {
 	}
 
 	discord.InitSession()
+
+	firebase.Initialize()
+	defer firebase.Close()
+	
 	addHandlers()
 	discord.InitConnection()
 	discord.RegisterCommands()
@@ -29,7 +34,6 @@ func Start() {
 }
 
 func addHandlers() {
-	discord.Session.AddHandler(handlers.MessageCreateHandler)
+	//discord.Session.AddHandler(handlers.MessageCreateHandler)
 	discord.Session.AddHandler(handlers.InteractionCreateHandler)
-
 }
