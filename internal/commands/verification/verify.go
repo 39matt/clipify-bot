@@ -2,6 +2,7 @@ package verification
 
 import (
 	"clipping-bot/internal/config"
+	"clipping-bot/internal/discord"
 	"clipping-bot/internal/firebase"
 	"clipping-bot/internal/models"
 	"context"
@@ -24,12 +25,7 @@ func VerifyAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	if verificationSnapshot == nil {
-		respErr := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("User **%s** doesn't have any pending verifications!", i.Member.User.Username),
-			},
-		})
+		respErr := discord.RespondToInteraction(s, i, fmt.Sprintf("User **%s** doesn't have any pending verifications!", i.Member.User.Username))
 		if respErr != nil {
 			slog.Error("interaction respond failed", "error", respErr)
 		}

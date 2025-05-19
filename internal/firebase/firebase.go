@@ -19,6 +19,7 @@ var (
 	FirestoreClient *firestore.Client
 	once            sync.Once
 	mu              sync.RWMutex
+	ErrGeneric      = errors.New("Sorry something went wrong. Please try again or contact us if the error keeps occurring!")
 )
 
 func Initialize() {
@@ -81,9 +82,11 @@ func IsInitialized() bool {
 
 func GetVerificationByDiscordID(context context.Context, discordId string) (*firestore.DocumentSnapshot, error) {
 	if !IsInitialized() {
-		return nil, fmt.Errorf("firebase not initialized")
+		slog.Error("firebase instance not initialized")
+		return nil, ErrGeneric
 	}
 	if discordId == "" {
+		slog.Error("missing discord id")
 		return nil, fmt.Errorf("discordID cannot be empty")
 	}
 	query := FirestoreClient.Collection("verifications").Where("discordid", "==", discordId).Limit(1)
@@ -95,7 +98,8 @@ func GetVerificationByDiscordID(context context.Context, discordId string) (*fir
 		if errors.Is(err, iterator.Done) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to retrieve verification document: %s", err)
+		slog.Error("failed to get verification document", "error", err)
+		return nil, ErrGeneric
 	}
 	return doc, nil
 }
@@ -137,7 +141,7 @@ func AddVerification(context context.Context, discordId string, accountName stri
 	_, err = doc.Set(context, data)
 	if err != nil {
 		slog.Error("Failed to add verification", "error", err)
-		return nil, fmt.Errorf("Sorry, something went wrong. Please try again later or contact us if the error keeps occurring!")
+		return nil, ErrGeneric
 	}
 	slog.Info("Verification added to firestore successfully!")
 	return doc, nil
@@ -146,17 +150,17 @@ func AddVerification(context context.Context, discordId string, accountName stri
 func RemoveVerification(context context.Context, discordId string) error {
 	if !IsInitialized() {
 		slog.Error("firebase not initialized")
-		return fmt.Errorf("Sorry something went wrong. Please try again or contact us if the error keeps occurring!")
+		return ErrGeneric
 	}
 	if discordId == "" {
 		slog.Error("discordID cannot be empty")
-		return fmt.Errorf("Sorry something went wrong. Please try again or contact us if the error keeps occurring!")
+		return ErrGeneric
 	}
 
 	exists, err := GetVerificationByDiscordID(context, discordId)
 	if err != nil {
 		slog.Error("Failed to get verification", "error", err)
-		return fmt.Errorf("Sorry something went wrong. Please try again or contact us if the error keeps occurring!")
+		return ErrGeneric
 	}
 	if exists == nil {
 		return fmt.Errorf("verification does not exists for **%s**", discordId)
@@ -172,7 +176,7 @@ func RemoveVerification(context context.Context, discordId string) error {
 	_, err = doc.Ref.Delete(context)
 	if err != nil {
 		slog.Error("Failed to delete verification", "error", err)
-		return fmt.Errorf("Sorry something went wrong. Please try again or contact us if the error keeps occurring!")
+		return ErrGeneric
 	}
 	return nil
 }
