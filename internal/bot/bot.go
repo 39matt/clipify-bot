@@ -13,7 +13,7 @@ import (
 
 func Start() {
 	config.Load()
-	if config.IsAppEnvironment(config.APP_ENVIRONMENT_TEST) {
+	if config.IsAppEnvironment(config.AppEnvironmentTest) {
 		fmt.Println("App environment is test, aborting startup")
 		return
 	}
@@ -22,7 +22,7 @@ func Start() {
 
 	firebase.Initialize()
 	defer firebase.Close()
-	
+
 	addHandlers()
 	discord.InitConnection()
 	discord.RegisterCommands()

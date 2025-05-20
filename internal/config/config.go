@@ -18,9 +18,7 @@ type configuration struct {
 	RapidApiKey         string
 }
 
-const APP_ENVIRONMENT_LOCAL string = "LOCAL"
-const APP_ENVIRONMENT_TEST string = "TEST"
-const APP_ENVIRONMENT_PRODUCTION string = "PRODUCTION"
+const AppEnvironmentTest string = "TEST"
 
 // config contains all environment variables that should be included in the .env file.
 var config *configuration
@@ -43,9 +41,9 @@ func Load() {
 	}
 }
 
-func GetAppEnvironment() string {
-	return config.AppEnvironment
-}
+//func GetAppEnvironment() string {
+//	return config.AppEnvironment
+//}
 
 func IsAppEnvironment(environments ...string) bool {
 	if len(environments) == 0 {
@@ -61,17 +59,17 @@ func IsAppEnvironment(environments ...string) bool {
 	return false
 }
 
-func GetBotPrefix() string {
-	return config.BotPrefix
-}
-
-func GetBotStatus() string {
-	return config.BotStatus
-}
-
-func GetBotGuildJoinMessage() string {
-	return config.BotGuildJoinMessage
-}
+//func GetBotPrefix() string {
+//	return config.BotPrefix
+//}
+//
+//func GetBotStatus() string {
+//	return config.BotStatus
+//}
+//
+//func GetBotGuildJoinMessage() string {
+//	return config.BotGuildJoinMessage
+//}
 
 func GetDiscordToken() string {
 	return config.DiscordToken
