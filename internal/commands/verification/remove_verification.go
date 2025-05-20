@@ -9,10 +9,8 @@ import (
 	"log/slog"
 )
 
-func RemoveVerification(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.Background()
-
-	err := firebase.RemoveVerification(ctx, i.Member.User.ID)
+func RemoveVerification(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
+	err := firebase.RemoveVerification(ctx, i.Member.User.Username)
 
 	if err != nil {
 		respErr := discord.RespondToInteraction(s, i, err.Error())

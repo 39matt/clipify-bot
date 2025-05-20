@@ -12,13 +12,11 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
-func VerifyAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.Background()
-	verificationSnapshot, err := firebase.GetVerificationByDiscordID(ctx, i.Member.User.ID)
+func VerifyAccount(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
+	verificationSnapshot, err := firebase.GetVerificationByDiscordUsername(ctx, i.Member.User.Username)
 	if err != nil {
 		slog.Error("Failed to get verification from firestore", "error", err)
 		return
@@ -32,16 +30,16 @@ func VerifyAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	var verificationInfo models.PendingVerification
-	err = verificationSnapshot.DataTo(&verificationInfo)
+	var unverifiedAccount models.UnverifiedAccount
+	err = verificationSnapshot.DataTo(&unverifiedAccount)
 	if err != nil {
 		slog.Error("error getting verification data", "error", err)
 	}
 
-	switch verificationInfo.Platform {
+	switch unverifiedAccount.Platform {
 	case "TikTok":
 
-		url := fmt.Sprintf("https://tiktok-api23.p.rapidapi.com/api/user/info?uniqueId=%s", verificationInfo.AccountName)
+		url := fmt.Sprintf("https://tiktok-api23.p.rapidapi.com/api/user/info?uniqueId=%s", unverifiedAccount.Username)
 
 		req, _ := http.NewRequest("GET", url, nil)
 
@@ -62,31 +60,30 @@ func VerifyAccount(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 		bio := result.UserInfo.User.Signature
 
-		if strings.Contains(bio, strconv.Itoa(verificationInfo.Code)) {
-			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf("Successfully verified **%s** (**%s**)!", verificationInfo.AccountName, verificationInfo.Platform),
-				},
-			})
+		if strings.Contains(bio, unverifiedAccount.Code) {
+			err = discord.RespondToInteraction(s, i, fmt.Sprintf("Successfully verified **%s** (**%s**)!", unverifiedAccount.Username, unverifiedAccount.Platform))
 			if err != nil {
 				slog.Error("interaction response error", "error", err)
 			}
 
-			err = firebase.RemoveVerification(ctx, i.Member.User.ID)
+			err = firebase.RemoveVerification(ctx, i.Member.User.Username)
 			if err == nil {
 				slog.Info("Verification removed from firestore successfully!")
 			}
 
-			//TODO add verified user to firebase
+			_, err = firebase.AddVerifiedAccount(ctx, i.Member.User.Username, models.Account{
+				Username: unverifiedAccount.Username,
+				Platform: unverifiedAccount.Platform,
+				Link:     fmt.Sprintf("https://www.tiktok.com/@%s", unverifiedAccount.Username),
+				Videos:   nil,
+			})
+
+			if err != nil {
+				slog.Error("error adding verified account", "error", err)
+			}
 
 		} else {
-			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf("Please put **%d** on **%s** (**%s**) and then call '/verify-account' again", verificationInfo.Code, verificationInfo.AccountName, verificationInfo.Platform),
-				},
-			})
+			err = discord.RespondToInteraction(s, i, fmt.Sprintf("Please put **%s** on **%s** (**%s**) and then call '/verify-account' again", unverifiedAccount.Code, unverifiedAccount.Username, unverifiedAccount.Platform))
 			if err != nil {
 				slog.Error("interaction response error", "error", err)
 			}
