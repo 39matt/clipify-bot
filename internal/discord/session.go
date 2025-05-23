@@ -18,13 +18,13 @@ var (
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "platform",
-					Description: "Platform of the account (e.g. YouTube, Twitch)",
+					Description: "Platform of the account (e.g. TikTok, Instagram)",
 					Choices:     models.PlatformChoices,
 					Required:    true,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "accountname",
+					Name:        "account-name",
 					Description: "Name of the account",
 					Required:    true,
 				},
@@ -41,6 +41,25 @@ var (
 		{
 			Name:        "register",
 			Description: "Register an account (linked to your discord account)",
+		},
+		{
+			Name:        "add-video",
+			Description: "Track a new video",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "platform",
+					Description: "Platform of the account (e.g. ikTok, Instagram)",
+					Choices:     models.PlatformChoices,
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "video-link",
+					Description: "Link to the video you uploaded",
+					Required:    true,
+				},
+			},
 		},
 	}
 )

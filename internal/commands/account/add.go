@@ -3,11 +3,13 @@ package account
 import (
 	"clipping-bot/internal/discord"
 	"clipping-bot/internal/firebase"
+	"clipping-bot/internal/utils"
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log/slog"
 	"math/rand"
+	"time"
 )
 
 func AddAccount(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -16,26 +18,44 @@ func AddAccount(ctx context.Context, s *discordgo.Session, i *discordgo.Interact
 		switch option.Name {
 		case "platform":
 			platform = option.StringValue()
-		case "accountname":
+		case "account-name":
 			accountname = option.StringValue()
 		}
 	}
 
+	can, err := firebase.CanUserAddTikTokAccount(ctx, i.Member.User.Username)
+	if err != nil {
+		slog.Error("can user add account function failed", "error", err)
+		return
+	}
+	if !can {
+		slog.Error("user already has 3 accounts", "error", err)
+		discord.RespondToInteraction(s, i, "You already have 3 TikTok accounts bound to your user! Please remove one if you want to add another one.")
+		return
+	}
+
+	accountExists, accountErr := firebase.IsAccountExists(ctx, i.Member.User.Username, accountname, platform)
+	if accountErr != nil {
+		slog.Error("Account check failed", accountErr)
+		discord.RespondToInteraction(s, i, utils.Capitalize(accountErr.Error()))
+
+	}
+	if accountExists {
+		discord.RespondToInteraction(s, i, fmt.Sprintf("Account **%s** (**%s**) is already in use", accountname, platform))
+		return
+	}
+
+	rand.Seed(time.Now().UnixNano())
 	verificationCode := rand.Intn(900000) + 100000
 	doc, err := firebase.AddVerification(ctx, i.Member.User.Username, accountname, platform, verificationCode)
 	if err != nil {
 		slog.Error("error adding verification", "error", err)
-		respErr := discord.RespondToInteraction(s, i, err.Error())
-		slog.Error("interaction respond failed", "error", respErr)
-		return
+		discord.RespondToInteraction(s, i, utils.Capitalize(err.Error()))
 	}
 	snapshot, err := doc.Get(ctx)
 	if err != nil {
 		slog.Error("error getting verification", "error", err)
 	}
 	data := snapshot.Data()
-	respErr := discord.RespondToInteraction(s, i, fmt.Sprintf("Please add **%s** to your **%s** %s account bio, then use `/verify-account` to complete verification.", data["code"], data["username"], data["platform"]))
-	if respErr != nil {
-		slog.Error("interaction respond failed", "error", respErr)
-	}
+	discord.RespondToInteraction(s, i, fmt.Sprintf("Please add **%s** to your **%s** %s account bio, then use `/verify-account` to complete verification.", data["code"], data["username"], data["platform"]))
 }

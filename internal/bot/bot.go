@@ -34,6 +34,5 @@ func Start() {
 }
 
 func addHandlers() {
-	//discord.Session.AddHandler(handlers.MessageCreateHandler)
 	discord.Session.AddHandler(handlers.InteractionCreateHandler)
 }

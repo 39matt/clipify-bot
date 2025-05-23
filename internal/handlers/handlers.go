@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"clipping-bot/internal/commands/account"
+	"clipping-bot/internal/commands/user"
 	"clipping-bot/internal/commands/verification"
-	"context"
+	"clipping-bot/internal/commands/video"
+	"clipping-bot/internal/globalctx"
 	"github.com/bwmarrin/discordgo"
-	"time"
+	"log/slog"
 )
 
 func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -13,17 +15,26 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+	})
+	if err != nil {
+		slog.Warn("failed to defer interaction", "error", err)
+	}
+
+	ctx, cancel := globalctx.ForRequest()
 	defer cancel()
 
 	switch i.ApplicationCommandData().Name {
 	case "register":
-		account.Register(ctx, s, i)
+		user.Register(ctx, s, i)
 	case "add-account":
 		account.AddAccount(ctx, s, i)
 	case "verify-account":
 		verification.VerifyAccount(ctx, s, i)
 	case "remove-verification":
 		verification.RemoveVerification(ctx, s, i)
+	case "add-video":
+		video.AddVideo(ctx, s, i)
 	}
 }

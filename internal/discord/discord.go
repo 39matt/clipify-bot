@@ -12,16 +12,11 @@ import (
 //	}
 //}
 
-func RespondToInteraction(session *discordgo.Session, interaction *discordgo.InteractionCreate, responseMessage string) error {
-	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: responseMessage,
-		},
+func RespondToInteraction(session *discordgo.Session, interaction *discordgo.InteractionCreate, responseMessage string) {
+	_, err := session.InteractionResponseEdit(interaction.Interaction, &discordgo.WebhookEdit{
+		Content: &responseMessage,
 	})
 	if err != nil {
 		slog.Warn("failed to respond to interaction", "error", err)
-		return err
 	}
-	return nil
 }

@@ -23,6 +23,10 @@ const AppEnvironmentTest string = "TEST"
 // config contains all environment variables that should be included in the .env file.
 var config *configuration
 
+func init() {
+	Load()
+}
+
 // Load loads the environment variables from the .env file.
 func Load() {
 	err := godotenv.Load()

@@ -14,7 +14,7 @@ import (
 func GetVerificationByDiscordUsername(ctx context.Context, discordUsername string) (*firestore.DocumentSnapshot, error) {
 	if !IsInitialized() {
 		slog.Error("firebase instance not initialized")
-		return nil, ErrGeneric
+		return nil, errGeneric
 	}
 	if discordUsername == "" {
 		slog.Error("missing discord id")
@@ -30,7 +30,7 @@ func GetVerificationByDiscordUsername(ctx context.Context, discordUsername strin
 			return nil, nil
 		}
 		slog.Error("failed to get verification document", "error", err)
-		return nil, ErrGeneric
+		return nil, errGeneric
 	}
 
 	unverifiedDataIter := FirestoreClient.Collection("users").Doc(doc.Ref.ID).Collection("unverified_data").Limit(1).Documents(ctx)
@@ -42,7 +42,7 @@ func GetVerificationByDiscordUsername(ctx context.Context, discordUsername strin
 			return nil, nil
 		}
 		slog.Error("failed to get verification document", "error", err)
-		return nil, ErrGeneric
+		return nil, errGeneric
 	}
 	return dataSnapshot, nil
 }
@@ -62,27 +62,30 @@ func AddVerification(ctx context.Context, discordUsername string, accountName st
 		return nil, fmt.Errorf("code cannot be negative")
 	}
 
-	exists, err := GetVerificationByDiscordUsername(ctx, discordUsername)
+	verificationExists, verificationErr := GetVerificationByDiscordUsername(ctx, discordUsername)
 
-	if err != nil {
-		return nil, err
+	if verificationErr != nil {
+		return nil, verificationErr
 	}
 
-	if exists != nil {
-		return nil, fmt.Errorf("verification already exists for **%s** on **%s**. Please put **%s** in your bio", accountName, platform, exists.Data()["code"])
+	if verificationExists != nil {
+		return nil, fmt.Errorf("verification already exists for **%s** on **%s**. Please put **%s** in your bio", accountName, platform, verificationExists.Data()["code"])
 	}
-	doc := GetUserReferenceByUsername(ctx, discordUsername)
+	doc, userErr := GetUserSnapshotByUsername(ctx, discordUsername)
 	data := models.UnverifiedAccount{
 		Code:     strconv.Itoa(code),
 		Platform: platform,
 		Username: accountName,
 	}
+	if userErr != nil {
+		return nil, userErr
+	}
 	subcollection := FirestoreClient.Collection("users").Doc(doc.Ref.ID).Collection("unverified_data")
 	newDoc := subcollection.NewDoc()
-	_, err = newDoc.Set(ctx, data)
+	_, err := newDoc.Set(ctx, data)
 	if err != nil {
 		slog.Error("Failed to add verification", "error", err)
-		return nil, ErrGeneric
+		return nil, errGeneric
 	}
 	slog.Info("Verification added to firestore successfully!")
 	return newDoc, nil
@@ -91,31 +94,35 @@ func AddVerification(ctx context.Context, discordUsername string, accountName st
 func RemoveVerification(ctx context.Context, discordUsername string) error {
 	if !IsInitialized() {
 		slog.Error("firebase not initialized")
-		return ErrGeneric
+		return errGeneric
 	}
 	if discordUsername == "" {
 		slog.Error("discordID cannot be empty")
-		return ErrGeneric
+		return errGeneric
 	}
 
 	exists, err := GetVerificationByDiscordUsername(ctx, discordUsername)
 	if err != nil {
 		slog.Error("Failed to get verification", "error", err)
-		return ErrGeneric
+		return errGeneric
 	}
 	if exists == nil {
-		return fmt.Errorf("**%s** does not have any pending verifications.", discordUsername)
+		return fmt.Errorf("**%s** does not have any pending verifications", discordUsername)
 	}
 
-	doc := GetUserReferenceByUsername(ctx, discordUsername)
+	doc, userErr := GetUserSnapshotByUsername(ctx, discordUsername)
 
+	if userErr != nil {
+		slog.Error("Failed to get user", "error", err)
+		return userErr
+	}
 	subcollection := FirestoreClient.Collection("users").Doc(doc.Ref.ID).Collection("unverified_data")
 	docs, err := subcollection.Documents(ctx).GetAll()
 	for _, d := range docs {
 		_, err = d.Ref.Delete(ctx)
 		if err != nil {
 			slog.Error("Failed to delete a document from unverified_data", "docID", d.Ref.ID, "error", err)
-			return ErrGeneric
+			return errGeneric
 		}
 	}
 	return nil
