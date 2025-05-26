@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"log/slog"
 	"strconv"
 	"strings"
 )
@@ -27,16 +28,16 @@ func GetStats(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 
 	components := buildAccountNavComponents(page, len(accountNames))
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Embeds:     []*discordgo.MessageEmbed{embed},
-			Components: components,
-		},
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Embeds:     &[]*discordgo.MessageEmbed{embed},
+		Components: &components,
 	})
+	if err != nil {
+		slog.Error("failed to respond to interaction: ", err)
+		return
+	}
 }
 
-// Button handler
 func HandleAccountStatsButton(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	username := i.Member.User.Username
 	accountNames, err := firebase.GetUserAccountNames(ctx, username)
@@ -69,13 +70,19 @@ func HandleAccountStatsButton(ctx context.Context, s *discordgo.Session, i *disc
 	embed := buildAccountStatsEmbed(username, accountNames[page], platform, videos)
 	components := buildAccountNavComponents(page, len(accountNames))
 
-	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-		Embeds:     &[]*discordgo.MessageEmbed{embed},
-		Components: &components,
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: components,
+		},
 	})
+
+	if err != nil {
+		slog.Error("failed to respond", "error", err)
+	}
 }
 
-// Helper: Build embed for a single account
 func buildAccountStatsEmbed(username, accountName, platform string, videos []models.Video) *discordgo.MessageEmbed {
 	fields := []*discordgo.MessageEmbedField{}
 

@@ -16,15 +16,21 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 	ctx, cancel := globalctx.ForRequest()
 	defer cancel()
 
-	if i.Type != discordgo.InteractionApplicationCommand {
-		return
-	}
+	// Handle buttons first
 	if i.Type == discordgo.InteractionMessageComponent {
 		if strings.HasPrefix(i.MessageComponentData().CustomID, "account_stats_") {
 			stats.HandleAccountStatsButton(ctx, s, i)
 			return
 		}
+		// ... handle other buttons here if needed
+		return
 	}
+
+	// Handle slash commands
+	if i.Type != discordgo.InteractionApplicationCommand {
+		return
+	}
+
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 	})
@@ -45,6 +51,5 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 		video.AddVideo(ctx, s, i)
 	case "stats":
 		stats.GetStats(ctx, s, i)
-
 	}
 }
