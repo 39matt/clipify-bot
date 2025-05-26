@@ -20,3 +20,21 @@ func RespondToInteraction(session *discordgo.Session, interaction *discordgo.Int
 		slog.Warn("failed to respond to interaction", "error", err)
 	}
 }
+
+// In your discord package
+
+func RespondToInteractionWithEmbed(
+	session *discordgo.Session,
+	interaction *discordgo.InteractionCreate,
+	embed *discordgo.MessageEmbed,
+) {
+	_, err := session.InteractionResponseEdit(
+		interaction.Interaction,
+		&discordgo.WebhookEdit{
+			Embeds: &[]*discordgo.MessageEmbed{embed},
+		},
+	)
+	if err != nil {
+		slog.Warn("failed to respond to interaction", "error", err)
+	}
+}

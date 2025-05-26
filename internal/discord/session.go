@@ -61,6 +61,10 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "stats",
+			Description: "Get your stats",
+		},
 	}
 )
 

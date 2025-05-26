@@ -48,13 +48,14 @@ func GetTiktokVideoInfo(videoId string) (models.Video, error) {
 	if result.VideoInfo.VideoStructure.Description == "" {
 		return models.Video{}, fmt.Errorf("video not found or private")
 	}
-	
+
 	return models.Video{
 		Name:     result.VideoInfo.VideoStructure.Description,
 		Link:     fmt.Sprintf("https://www.tiktok.com/@%s/video/%s", result.VideoInfo.VideoStructure.Author.Username, videoId),
 		Views:    result.VideoInfo.VideoStructure.Stats.Views,
 		Shares:   result.VideoInfo.VideoStructure.Stats.Shares,
 		Comments: result.VideoInfo.VideoStructure.Stats.Comments,
+		Likes:    result.VideoInfo.VideoStructure.Stats.Likes,
 	}, nil
 }
 

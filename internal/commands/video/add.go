@@ -26,7 +26,14 @@ func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	switch platform {
 	case "TikTok":
 		username := strings.Split(videoLink, "/")[3][1:]
+		if strings.Contains(username, "?") {
+			username = strings.Split(username, "?")[0]
+		}
+
 		videoId := strings.Split(videoLink, "/")[5]
+		if strings.Contains(videoId, "?") {
+			videoId = strings.Split(videoId, "?")[0]
+		}
 
 		names, err := firebase.GetUserAccountNames(ctx, i.Member.User.Username)
 		if err != nil {
@@ -55,7 +62,8 @@ func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	_, err := firebase.AddVideo(ctx, i.Member.User.Username, videoInfo)
 	if err != nil {
 		discord.RespondToInteraction(s, i, utils.Capitalize(err.Error()))
+		return
 	}
 
-	discord.RespondToInteraction(s, i, fmt.Sprintf("[Video](%s) has been added successfully!", videoInfo.Link))
+	discord.RespondToInteraction(s, i, fmt.Sprintf("[%s](<%s>) has been added successfully!", videoInfo.Name, videoInfo.Link))
 }

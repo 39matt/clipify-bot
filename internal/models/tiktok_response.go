@@ -16,6 +16,7 @@ type TikTokVideoResponse struct {
 				Shares   int `json:"shareCount"`
 				Views    int `json:"playCount"`
 				Comments int `json:"commentCount"`
+				Likes    int `json:"diggCount"`
 			} `json:"stats"`
 			Author struct {
 				Username string `json:"uniqueId"`

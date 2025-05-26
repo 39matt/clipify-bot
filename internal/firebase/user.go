@@ -94,10 +94,6 @@ func CanUserAddTikTokAccount(ctx context.Context, discordUsername string) (bool,
 		}
 	}
 
-	if numberOfAccounts == 0 {
-		return false, fmt.Errorf("no accounts found for user %s", discordUsername)
-	}
-
 	if numberOfAccounts < 3 {
 		return true, nil
 	}
@@ -118,6 +114,20 @@ func GetUserSnapshotByUsername(ctx context.Context, discordUsername string) (*fi
 		return nil, errGeneric
 	}
 	return doc, nil
+}
+
+func GetUserDataByDiscordUsername(ctx context.Context, discordUsername string) (*models.User, error) {
+	userSnapshot, userErr := GetUserSnapshotByUsername(ctx, discordUsername)
+	if userErr != nil {
+		slog.Error("failed to get user snapshot", "error", userErr)
+		return nil, errGeneric
+	}
+	userData := models.User{}
+	if err := userSnapshot.DataTo(&userData); err != nil {
+		slog.Error("Error parsing user data", "error", err, "user", userSnapshot)
+		return nil, errGeneric
+	}
+	return &userData, nil
 }
 
 func AddUser(ctx context.Context, discordUsername string) (*firestore.DocumentRef, error) {
