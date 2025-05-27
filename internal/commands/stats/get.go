@@ -20,22 +20,15 @@ func GetStats(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		return
 	}
 
-	page := 0            // Start at first account
-	platform := "TikTok" // Adjust if you support multiple platforms
+	page := 0
+	platform := "TikTok"
 
 	videos, _ := firebase.GetAllAccountVideos(ctx, username, accountNames[page], platform)
 	embed := buildAccountStatsEmbed(username, accountNames[page], platform, videos)
 
 	components := buildAccountNavComponents(page, len(accountNames))
 
-	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-		Embeds:     &[]*discordgo.MessageEmbed{embed},
-		Components: &components,
-	})
-	if err != nil {
-		slog.Error("failed to respond to interaction: ", err)
-		return
-	}
+	discord.RespondToInteractionWithEmbed(s, i, embed, components)
 }
 
 func HandleAccountStatsButton(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -84,7 +77,7 @@ func HandleAccountStatsButton(ctx context.Context, s *discordgo.Session, i *disc
 }
 
 func buildAccountStatsEmbed(username, accountName, platform string, videos []models.Video) *discordgo.MessageEmbed {
-	fields := []*discordgo.MessageEmbedField{}
+	var fields []*discordgo.MessageEmbedField
 
 	if len(videos) == 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
@@ -93,18 +86,14 @@ func buildAccountStatsEmbed(username, accountName, platform string, videos []mod
 			Inline: false,
 		})
 	} else {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   fmt.Sprintf("%s - %s's Stats", platform, accountName),
-			Value:  "",
-			Inline: false,
-		})
 		for idx, video := range videos {
 			name := video.Name
 			if len(name) > 30 {
 				name = name[:27] + "..."
 			}
 			value := fmt.Sprintf(
-				"[🔗 Link](<%s>)\n👁️ **%s** • ❤️ **%s** • 💬 **%s** • 🔄 **%s**",
+				"\n[🔗 %s](<%s>)\n👁️ **%s** • ❤️ **%s** • 💬 **%s** • 🔄 **%s**\n",
+				video.Name,
 				video.Link,
 				formatNumber(video.Views),
 				formatNumber(video.Likes),
@@ -112,7 +101,7 @@ func buildAccountStatsEmbed(username, accountName, platform string, videos []mod
 				formatNumber(video.Shares),
 			)
 			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   fmt.Sprintf("%d. %s", idx+1, name),
+				Name:   fmt.Sprintf("----------VIDEO %d-----------", idx+1),
 				Value:  value,
 				Inline: false,
 			})
@@ -120,17 +109,15 @@ func buildAccountStatsEmbed(username, accountName, platform string, videos []mod
 	}
 
 	return &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("%s's Account: %s (%s)", username, accountName, platform),
-		Description: "Here are your video stats for this account:",
-		Color:       0x5865F2,
-		Fields:      fields,
+		Title:  fmt.Sprintf("**Stats**: %s (%s)", accountName, platform),
+		Color:  0x5865F2,
+		Fields: fields,
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: "Use /add-video to add more videos!",
 		},
 	}
 }
 
-// Helper: Build navigation buttons
 func buildAccountNavComponents(page, total int) []discordgo.MessageComponent {
 	return []discordgo.MessageComponent{
 		discordgo.ActionsRow{
@@ -152,7 +139,6 @@ func buildAccountNavComponents(page, total int) []discordgo.MessageComponent {
 	}
 }
 
-// Helper: Format numbers with commas
 func formatNumber(n int) string {
 	str := fmt.Sprintf("%d", n)
 	if n < 1000 {

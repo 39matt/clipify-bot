@@ -3,6 +3,7 @@ package handlers
 import (
 	"clipping-bot/internal/commands/account"
 	"clipping-bot/internal/commands/stats"
+	"clipping-bot/internal/commands/test"
 	"clipping-bot/internal/commands/user"
 	"clipping-bot/internal/commands/verification"
 	"clipping-bot/internal/commands/video"
@@ -39,6 +40,8 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 	}
 
 	switch i.ApplicationCommandData().Name {
+	case "test":
+		test.Test(s, i)
 	case "register":
 		user.Register(ctx, s, i)
 	case "add-account":

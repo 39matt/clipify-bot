@@ -27,11 +27,13 @@ func RespondToInteractionWithEmbed(
 	session *discordgo.Session,
 	interaction *discordgo.InteractionCreate,
 	embed *discordgo.MessageEmbed,
+	components []discordgo.MessageComponent,
 ) {
 	_, err := session.InteractionResponseEdit(
 		interaction.Interaction,
 		&discordgo.WebhookEdit{
-			Embeds: &[]*discordgo.MessageEmbed{embed},
+			Embeds:     &[]*discordgo.MessageEmbed{embed},
+			Components: &components,
 		},
 	)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -49,13 +50,19 @@ func GetTiktokVideoInfo(videoId string) (models.Video, error) {
 		return models.Video{}, fmt.Errorf("video not found or private")
 	}
 
+	sec, err := strconv.ParseInt(result.VideoInfo.VideoStructure.CreateTime, 10, 64)
+	if err != nil {
+		slog.Error("Failed to convert create time", "error", err)
+		sec = 0
+	}
 	return models.Video{
-		Name:     result.VideoInfo.VideoStructure.Description,
-		Link:     fmt.Sprintf("https://www.tiktok.com/@%s/video/%s", result.VideoInfo.VideoStructure.Author.Username, videoId),
-		Views:    result.VideoInfo.VideoStructure.Stats.Views,
-		Shares:   result.VideoInfo.VideoStructure.Stats.Shares,
-		Comments: result.VideoInfo.VideoStructure.Stats.Comments,
-		Likes:    result.VideoInfo.VideoStructure.Stats.Likes,
+		Name:      result.VideoInfo.VideoStructure.Description,
+		Link:      fmt.Sprintf("https://www.tiktok.com/@%s/video/%s", result.VideoInfo.VideoStructure.Author.Username, videoId),
+		Views:     result.VideoInfo.VideoStructure.Stats.Views,
+		Shares:    result.VideoInfo.VideoStructure.Stats.Shares,
+		Comments:  result.VideoInfo.VideoStructure.Stats.Comments,
+		Likes:     result.VideoInfo.VideoStructure.Stats.Likes,
+		CreatedAt: time.Unix(sec, 0),
 	}, nil
 }
 

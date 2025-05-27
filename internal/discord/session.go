@@ -12,6 +12,10 @@ import (
 var (
 	commandList = []*discordgo.ApplicationCommand{
 		{
+			Name:        "test",
+			Description: "test",
+		},
+		{
 			Name:        "add-account",
 			Description: "Add a new account",
 			Options: []*discordgo.ApplicationCommandOption{

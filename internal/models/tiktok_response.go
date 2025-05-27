@@ -21,6 +21,7 @@ type TikTokVideoResponse struct {
 			Author struct {
 				Username string `json:"uniqueId"`
 			} `json:"author"`
+			CreateTime string `json:"createTime"`
 		} `json:"itemStruct"`
 	} `json:"itemInfo"`
 }

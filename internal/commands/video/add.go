@@ -64,6 +64,13 @@ func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		discord.RespondToInteraction(s, i, utils.Capitalize(err.Error()))
 		return
 	}
-
-	discord.RespondToInteraction(s, i, fmt.Sprintf("[%s](<%s>) has been added successfully!", videoInfo.Name, videoInfo.Link))
+	embed := utils.BuildEmbedMessageTemplate()
+	embed.Title = "Video upload results"
+	embed.Description = fmt.Sprintf("%s\nHas been uploaded successfully ✅", videoInfo.Name)
+	if len(videoInfo.Name) > 30 {
+		embed.Description = fmt.Sprintf("%s\nHas been uploaded successfully ✅", videoInfo.Name[:27]+"...")
+	}
+	embed.URL = videoLink
+	var components []discordgo.MessageComponent
+	discord.RespondToInteractionWithEmbed(s, i, embed, components)
 }
