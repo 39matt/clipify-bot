@@ -13,9 +13,11 @@ import (
 )
 
 func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var platform, videoLink string
+	var platform, videoLink, campaignId string
 	for _, option := range i.ApplicationCommandData().Options {
 		switch option.Name {
+		case "campaign":
+			campaignId = option.StringValue()
 		case "platform":
 			platform = option.StringValue()
 		case "video-link":
@@ -23,6 +25,7 @@ func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		}
 	}
 	videoInfo := models.Video{}
+	videoInfo.CampaignId = campaignId
 	switch platform {
 	case "TikTok":
 		username := strings.Split(videoLink, "/")[3][1:]
@@ -45,7 +48,7 @@ func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 			}
 			if index == len(names)-1 {
 				slog.Error("User doesn't have video's author in his verified accounts", "error", err)
-				discord.RespondToInteraction(s, i, fmt.Sprintf("[This](%s) isn't your video! Please **add** this account or use another video uploaded by accounts you have set up.", videoLink))
+				discord.RespondToInteractionEmbed(s, i, "⚠️ Warning", fmt.Sprintf("[This](%s) isn't your video! Please **add** this account or use another video uploaded by accounts you have set up.", videoLink))
 				return
 			}
 		}
@@ -54,14 +57,14 @@ func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		videoInfo, videoErr = utils.GetTiktokVideoInfo(videoId)
 
 		if videoErr != nil {
-			discord.RespondToInteraction(s, i, utils.Capitalize(videoErr.Error()))
+			discord.RespondToInteractionEmbedError(s, i, videoErr.Error())
 			return
 		}
 	}
 
 	_, err := firebase.AddVideo(ctx, i.Member.User.Username, videoInfo)
 	if err != nil {
-		discord.RespondToInteraction(s, i, utils.Capitalize(err.Error()))
+		discord.RespondToInteractionEmbedError(s, i, err.Error())
 		return
 	}
 	embed := utils.BuildEmbedMessageTemplate()
@@ -72,5 +75,5 @@ func AddVideo(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	}
 	embed.URL = videoLink
 	var components []discordgo.MessageComponent
-	discord.RespondToInteractionWithEmbed(s, i, embed, components)
+	discord.RespondToInteractionEmbedAndButtons(s, i, embed, components)
 }

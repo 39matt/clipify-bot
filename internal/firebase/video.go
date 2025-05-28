@@ -37,16 +37,16 @@ func AddVideo(ctx context.Context, discordUsername string, video models.Video) (
 		return nil, fmt.Errorf("views must be greater than 0")
 	}
 
-	userSnapshot, err := GetUserSnapshotByUsername(ctx, discordUsername)
-	if err != nil {
-		slog.Error("error getting user", "error", err)
-		return nil, err
+	var platform string
+	if strings.Contains(video.Link, "tiktok") {
+		platform = "TikTok"
+	} else if strings.Contains(video.Link, "instagram") {
+		platform = "Instagram"
+	} else {
+		slog.Error("Link is not TT or IG")
+		return nil, fmt.Errorf("link is not Tiktok or Instagram link")
 	}
 
-	platform := "TikTok"
-	if strings.Contains(video.Link, "instagram") {
-		platform = "Instagram"
-	}
 	accountName := strings.Split(video.Link, "/")[3][1:]
 	accountSnapshot, accountErr := GetAccountSnapshotByNameAndPlatform(ctx, discordUsername, accountName, platform)
 	if accountErr != nil {
@@ -63,7 +63,7 @@ func AddVideo(ctx context.Context, discordUsername string, video models.Video) (
 		slog.Error("Video already exists")
 		return nil, fmt.Errorf("video is already added")
 	}
-	ref, _, err := FirestoreClient.Collection("users").Doc(userSnapshot.Ref.ID).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Add(ctx, video)
+	ref, _, err := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Add(ctx, video)
 	if err != nil {
 		slog.Error("Failed to add video", "error", err)
 		return nil, errGeneric
@@ -81,12 +81,6 @@ func GetAccountVideoByLink(ctx context.Context, discordUsername string, videoLin
 		return nil, errGeneric
 	}
 
-	userSnapshot, userErr := GetUserSnapshotByUsername(ctx, discordUsername)
-	if userErr != nil {
-		slog.Error("Error getting user", "error", userErr)
-		return nil, errGeneric
-	}
-
 	platform := "TikTok"
 	if strings.Contains(videoLink, "instagram") {
 		platform = "Instagram"
@@ -98,7 +92,7 @@ func GetAccountVideoByLink(ctx context.Context, discordUsername string, videoLin
 		return nil, errGeneric
 	}
 
-	videoIter := FirestoreClient.Collection("users").Doc(userSnapshot.Ref.ID).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Where("link", "==", videoLink).Documents(ctx)
+	videoIter := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Where("link", "==", videoLink).Documents(ctx)
 	defer videoIter.Stop()
 	videoSnap, iterErr := videoIter.Next()
 	if iterErr != nil {
@@ -118,39 +112,33 @@ func GetAccountVideoByLink(ctx context.Context, discordUsername string, videoLin
 	return video, nil
 }
 
-func GetAllUserVideos(ctx context.Context, discordUsername string) ([]models.Video, error) {
-	if !IsInitialized() {
-		slog.Error("Firebase instance not initialized")
-		return nil, errGeneric
-	}
-	if discordUsername == "" {
-		slog.Error("Username must be set")
-		return nil, errGeneric
-	}
-
-	userSnapshot, userErr := GetUserSnapshotByUsername(ctx, discordUsername)
-	if userErr != nil {
-		slog.Error("Error getting user", "error", userErr)
-		return nil, errGeneric
-	}
-
-	userVideos, videoErr := FirestoreClient.Collection("users").Doc(userSnapshot.Ref.ID).Collection("videos").Documents(ctx).GetAll()
-	if videoErr != nil {
-		slog.Error("Failed to get all videos", "error", videoErr)
-		return nil, errGeneric
-	}
-
-	// Initialize with correct capacity (not length)
-	videos := make([]models.Video, 0, len(userVideos))
-
-	for i, userVideo := range userVideos {
-		var video models.Video
-		if err := userVideo.DataTo(&video); err != nil {
-			slog.Error("Failed to parse video data", "error", err, "index", i)
-			continue
-		}
-		videos = append(videos, video)
-	}
-
-	return videos, nil
-}
+//func GetAllUserVideos(ctx context.Context, discordUsername string) ([]models.Video, error) {
+//	if !IsInitialized() {
+//		slog.Error("Firebase instance not initialized")
+//		return nil, errGeneric
+//	}
+//	if discordUsername == "" {
+//		slog.Error("Username must be set")
+//		return nil, errGeneric
+//	}
+//
+//	userVideos, videoErr := FirestoreClient.Collection("users").Doc(discordUsername).Collection("videos").Documents(ctx).GetAll()
+//	if videoErr != nil {
+//		slog.Error("Failed to get all videos", "error", videoErr)
+//		return nil, errGeneric
+//	}
+//
+//	// Initialize with correct capacity (not length)
+//	videos := make([]models.Video, 0, len(userVideos))
+//
+//	for i, userVideo := range userVideos {
+//		var video models.Video
+//		if err := userVideo.DataTo(&video); err != nil {
+//			slog.Error("Failed to parse video data", "error", err, "index", i)
+//			continue
+//		}
+//		videos = append(videos, video)
+//	}
+//
+//	return videos, nil
+//}

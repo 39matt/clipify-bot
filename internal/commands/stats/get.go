@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log/slog"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -15,8 +15,8 @@ import (
 func GetStats(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	username := i.Member.User.Username
 	accountNames, err := firebase.GetUserAccountNames(ctx, username)
-	if err != nil || len(accountNames) == 0 {
-		discord.RespondToInteraction(s, i, "No accounts found.")
+	if err != nil || accountNames == nil {
+		discord.RespondToInteractionEmbedError(s, i, fmt.Sprintf("No accounts found for **%s**", username))
 		return
 	}
 
@@ -24,56 +24,45 @@ func GetStats(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	platform := "TikTok"
 
 	videos, _ := firebase.GetAllAccountVideos(ctx, username, accountNames[page], platform)
-	embed := buildAccountStatsEmbed(username, accountNames[page], platform, videos)
 
+	embed := buildAccountStatsEmbed(username, accountNames[page], platform, videos)
 	components := buildAccountNavComponents(page, len(accountNames))
 
-	discord.RespondToInteractionWithEmbed(s, i, embed, components)
+	discord.RespondToInteractionEmbedAndButtons(s, i, embed, components)
 }
 
 func HandleAccountStatsButton(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	username := i.Member.User.Username
 	accountNames, err := firebase.GetUserAccountNames(ctx, username)
-	if err != nil || len(accountNames) == 0 {
-		discord.RespondToInteraction(s, i, "No accounts found.")
+	if err != nil || accountNames == nil {
+		discord.RespondToInteractionEmbedError(s, i, fmt.Sprintf("No accounts found for **%s**", username))
 		return
 	}
 
 	data := i.MessageComponentData()
 	var action string
 	var page int
-	// CustomID format: account_stats_prev_0 or account_stats_next_1
 	parts := strings.Split(data.CustomID, "_")
 	if len(parts) != 4 {
-		discord.RespondToInteraction(s, i, "Invalid button.")
+		discord.RespondToInteractionEmbedError(s, i, "Invalid button.")
 		return
 	}
 	action = parts[2]
 	page, _ = strconv.Atoi(parts[3])
 
-	// Determine new page
 	if action == "prev" && page > 0 {
 		page--
 	} else if action == "next" && page < len(accountNames)-1 {
 		page++
 	}
 
-	platform := "TikTok" // Adjust if you support multiple platforms
+	platform := "TikTok"
 	videos, _ := firebase.GetAllAccountVideos(ctx, username, accountNames[page], platform)
+
 	embed := buildAccountStatsEmbed(username, accountNames[page], platform, videos)
 	components := buildAccountNavComponents(page, len(accountNames))
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseUpdateMessage,
-		Data: &discordgo.InteractionResponseData{
-			Embeds:     []*discordgo.MessageEmbed{embed},
-			Components: components,
-		},
-	})
-
-	if err != nil {
-		slog.Error("failed to respond", "error", err)
-	}
+	discord.RespondToInteractionEmbedAndButtons(s, i, embed, components)
 }
 
 func buildAccountStatsEmbed(username, accountName, platform string, videos []models.Video) *discordgo.MessageEmbed {
@@ -86,6 +75,9 @@ func buildAccountStatsEmbed(username, accountName, platform string, videos []mod
 			Inline: false,
 		})
 	} else {
+		sort.Slice(videos, func(i, j int) bool {
+			return videos[i].Views > videos[j].Views
+		})
 		for idx, video := range videos {
 			name := video.Name
 			if len(name) > 30 {
@@ -109,8 +101,8 @@ func buildAccountStatsEmbed(username, accountName, platform string, videos []mod
 	}
 
 	return &discordgo.MessageEmbed{
-		Title:  fmt.Sprintf("**Stats**: %s (%s)", accountName, platform),
-		Color:  0x5865F2,
+		Title:  fmt.Sprintf("**📊 Stats**"),
+		Color:  0x50C878,
 		Fields: fields,
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: "Use /add-video to add more videos!",

@@ -2,6 +2,8 @@ package discord
 
 import (
 	"clipping-bot/internal/config"
+	"clipping-bot/internal/firebase"
+	"clipping-bot/internal/globalctx"
 	"clipping-bot/internal/models"
 	"fmt"
 	"log/slog"
@@ -42,19 +44,18 @@ var (
 			Name:        "remove-verification",
 			Description: "Remove active verification",
 		},
-		{
-			Name:        "register",
-			Description: "Register an account (linked to your discord account)",
-		},
+		//{
+		//	Name:        "register",
+		//	Description: "Register an account (linked to your discord account)",
+		//},
 		{
 			Name:        "add-video",
 			Description: "Track a new video",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "platform",
-					Description: "Platform of the account (e.g. ikTok, Instagram)",
-					Choices:     models.PlatformChoices,
+					Name:        "campaign",
+					Description: "What campaign does your video belong to",
 					Required:    true,
 				},
 				{
@@ -68,6 +69,60 @@ var (
 		{
 			Name:        "stats",
 			Description: "Get your stats",
+		},
+		{
+			Name:        "create-campaign",
+			Description: "Create a new campaign",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "influencer",
+					Description: "Influencer's name",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "activity",
+					Description: "Activity description",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "budget",
+					Description: "Budget for the campaign",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "per-million",
+					Description: "Earnings per million views",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "max-submissions",
+					Description: "Maximum number of submissions",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "max-earnings",
+					Description: "Maximum total earnings",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "min-views-for-payout",
+					Description: "Minimum views for payout",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionNumber,
+					Name:        "max-earnings-per-post",
+					Description: "Maximum earnings per post",
+					Required:    true,
+				},
+			},
 		},
 	}
 )
@@ -92,11 +147,36 @@ func InitConnection() {
 }
 
 func RegisterCommands() {
-	// Register new commands
+	ctx, cancel := globalctx.ForRequest()
+	defer cancel()
+
 	for _, v := range commandList {
-		_, err := Session.ApplicationCommandCreate(Session.State.User.ID, "", v)
+		cmd := *v
+
+		if cmd.Name == "add-video" {
+			campaigns, ids, getErr := firebase.GetCampaigns(ctx)
+			if getErr != nil {
+				slog.Error("failed to get campaigns", "error", getErr)
+			}
+			options := make([]*discordgo.ApplicationCommandOption, len(cmd.Options))
+			copy(options, cmd.Options)
+			options[1].Choices = nil
+			for index, campaign := range campaigns {
+				if index >= 25 {
+					break
+				}
+				choice := &discordgo.ApplicationCommandOptionChoice{
+					Name:  fmt.Sprintf("%s - %s", campaign.Influencer, campaign.Activity),
+					Value: ids[index],
+				}
+				options[1].Choices = append(options[1].Choices, choice)
+			}
+			cmd.Options = options
+		}
+
+		_, err := Session.ApplicationCommandCreate(Session.State.User.ID, "", &cmd)
 		if err != nil {
-			fmt.Printf("Cannot create '%v' command: %v\n", v.Name, err)
+			fmt.Printf("Cannot create '%v' command: %v\n", cmd.Name, err)
 		}
 	}
 }

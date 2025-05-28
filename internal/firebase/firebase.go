@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	firebaseApp     *firebase.App
-	FirestoreClient *firestore.Client
-	once            sync.Once
-	mu              sync.RWMutex
-	errGeneric      = errors.New("an unexpected error occurred")
+	firebaseApp      *firebase.App
+	FirestoreClient  *firestore.Client
+	once             sync.Once
+	mu               sync.RWMutex
+	errGeneric       = errors.New("an unexpected error occurred")
+	errNotRegistered = errors.New("user not registered")
 )
 
 func Initialize() {

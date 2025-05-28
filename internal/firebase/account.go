@@ -10,13 +10,15 @@ import (
 	"log/slog"
 )
 
+var accountLimit = 3
+
 func IsAccountExists(ctx context.Context, discordUsername string, accountName string, platform string) (bool, error) {
-	userSnapshot, err := GetUserSnapshotByUsername(ctx, discordUsername)
-	if err != nil {
-		return false, err
+	if !IsInitialized() {
+		slog.Error("Firebase not initialized")
+		return false, errGeneric
 	}
 
-	query := FirestoreClient.Collection("users").Doc(userSnapshot.Ref.ID).Collection("accounts").
+	query := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").
 		Where("username", "==", accountName).
 		Where("platform", "==", platform).
 		Limit(1)
@@ -24,12 +26,12 @@ func IsAccountExists(ctx context.Context, discordUsername string, accountName st
 	iter := query.Documents(ctx)
 	defer iter.Stop()
 
-	_, err = iter.Next()
-	if err != nil {
-		if errors.Is(err, iterator.Done) {
+	_, iterErr := iter.Next()
+	if iterErr != nil {
+		if errors.Is(iterErr, iterator.Done) {
 			return false, nil
 		}
-		slog.Error("Error checking if account exists", "error", err)
+		slog.Error("Error checking if account exists", "error", iterErr)
 		return false, errGeneric
 	}
 
@@ -37,12 +39,12 @@ func IsAccountExists(ctx context.Context, discordUsername string, accountName st
 }
 
 func GetAccountSnapshotByNameAndPlatform(ctx context.Context, discordUsername string, accountName string, platform string) (*firestore.DocumentSnapshot, error) {
-	userSnapshot, err := GetUserSnapshotByUsername(ctx, discordUsername)
-	if err != nil {
-		return nil, err
+	if !IsInitialized() {
+		slog.Error("Firebase not initialized")
+		return nil, errGeneric
 	}
 
-	query := FirestoreClient.Collection("users").Doc(userSnapshot.Ref.ID).Collection("accounts").
+	query := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").
 		Where("username", "==", accountName).
 		Where("platform", "==", platform).
 		Limit(1)
@@ -61,7 +63,7 @@ func GetAccountSnapshotByNameAndPlatform(ctx context.Context, discordUsername st
 	return accountSnapshot, nil
 }
 
-func AddVerifiedAccount(ctx context.Context, discordUsername string, account models.Account) (*firestore.DocumentRef, error) {
+func AddAccount(ctx context.Context, discordUsername string, account models.Account) (*firestore.DocumentRef, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase not initialized")
 		return nil, errGeneric
@@ -75,13 +77,7 @@ func AddVerifiedAccount(ctx context.Context, discordUsername string, account mod
 		return nil, fmt.Errorf("platform cannot be empty")
 	}
 
-	userSnapshot, err := GetUserSnapshotByUsername(ctx, discordUsername)
-	if err != nil {
-		slog.Error("Failed to get user snapshot", "error", err)
-		return nil, err
-	}
-
-	ref, _, err := FirestoreClient.Collection("users").Doc(userSnapshot.Ref.ID).Collection("accounts").Add(ctx, account)
+	ref, _, err := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Add(ctx, account)
 	if err != nil {
 		slog.Error("Failed to add verified account", "error", err)
 		return nil, errGeneric
@@ -100,18 +96,13 @@ func GetAllAccountVideos(ctx context.Context, discordUsername string, accountNam
 		return nil, errGeneric
 	}
 
-	userSnapshot, userErr := GetUserSnapshotByUsername(ctx, discordUsername)
-	if userErr != nil {
-		slog.Error("Error getting user", "error", userErr)
-		return nil, errGeneric
-	}
 	accountSnapshot, accountErr := GetAccountSnapshotByNameAndPlatform(ctx, discordUsername, accountName, platform)
 	if accountErr != nil {
 		slog.Error("Error getting account", "error", accountErr)
 		return nil, errGeneric
 	}
 
-	accountVideos, videoErr := FirestoreClient.Collection("users").Doc(userSnapshot.Ref.ID).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Documents(ctx).GetAll()
+	accountVideos, videoErr := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Documents(ctx).GetAll()
 	if videoErr != nil {
 		slog.Error("Failed to get all videos", "error", videoErr)
 		return nil, errGeneric
@@ -121,12 +112,92 @@ func GetAllAccountVideos(ctx context.Context, discordUsername string, accountNam
 
 	for i, userVideo := range accountVideos {
 		var video models.Video
-		if err := userVideo.DataTo(&video); err != nil {
-			slog.Error("Failed to parse video data", "error", err, "index", i)
+		if parseErr := userVideo.DataTo(&video); parseErr != nil {
+			slog.Error("Failed to parse video data", "error", parseErr, "index", i)
 			continue
 		}
 		videos = append(videos, video)
 	}
 
 	return videos, nil
+}
+
+func GetUserAccountNames(ctx context.Context, discordUsername string) ([]string, error) {
+	if !IsInitialized() {
+		slog.Error("firebase not initialized")
+		return nil, errGeneric
+	}
+	if discordUsername == "" {
+		slog.Error("discordID cannot be empty")
+		return nil, errGeneric
+	}
+
+	docIter := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Documents(ctx)
+	defer docIter.Stop()
+
+	var accountNames []string
+	for {
+		doc, iterErr := docIter.Next()
+		if errors.Is(iterErr, iterator.Done) {
+			break
+		}
+		if iterErr != nil {
+			slog.Error("Error iterating through accounts", "error", iterErr)
+			return nil, errGeneric
+		}
+
+		var account models.Account
+		if parseErr := doc.DataTo(&account); parseErr != nil {
+			slog.Error("Error parsing account data", "error", parseErr, "docID", doc.Ref.ID)
+			continue
+		}
+
+		accountNames = append(accountNames, account.Username)
+	}
+
+	if len(accountNames) == 0 {
+		return nil, nil
+	}
+
+	return accountNames, nil
+}
+
+func CanUserAddTikTokAccount(ctx context.Context, discordUsername string) (bool, error) {
+	if !IsInitialized() {
+		slog.Error("firebase not initialized")
+		return false, errGeneric
+	}
+	if discordUsername == "" {
+		slog.Error("discordID cannot be empty")
+		return false, errGeneric
+	}
+
+	docIter := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Documents(ctx)
+	defer docIter.Stop()
+
+	numberOfAccounts := 0
+	for {
+		doc, err := docIter.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			slog.Error("Error iterating through accounts", "error", err)
+			return false, errGeneric
+		}
+
+		var account models.Account
+		if err := doc.DataTo(&account); err != nil {
+			slog.Error("Error parsing account data", "error", err, "docID", doc.Ref.ID)
+			continue
+		}
+		if account.Platform == "TikTok" {
+			numberOfAccounts++
+		}
+	}
+
+	if numberOfAccounts < accountLimit {
+		return true, nil
+	}
+	return false, nil
 }

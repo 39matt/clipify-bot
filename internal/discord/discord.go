@@ -1,34 +1,67 @@
 package discord
 
 import (
+	"clipping-bot/internal/utils"
 	"github.com/bwmarrin/discordgo"
 	"log/slog"
 )
 
-//func SendChannelMessage(channelID string, message string) {
-//	_, err := Session.ChannelMessageSend(channelID, message)
+//func RespondToInteraction(session *discordgo.Session, interaction *discordgo.InteractionCreate, responseMessage string) {
+//	message := utils.Capitalize(responseMessage)
+//	_, err := session.InteractionResponseEdit(interaction.Interaction, &discordgo.WebhookEdit{
+//		Content: &message,
+//	})
 //	if err != nil {
-//		slog.Warn("failed to send message to channel", "channelId", channelID, "message", message, "error", err)
+//		slog.Warn("failed to respond to interaction", "error", err)
 //	}
 //}
 
-func RespondToInteraction(session *discordgo.Session, interaction *discordgo.InteractionCreate, responseMessage string) {
-	_, err := session.InteractionResponseEdit(interaction.Interaction, &discordgo.WebhookEdit{
-		Content: &responseMessage,
-	})
+func RespondToInteractionEmbed(
+	session *discordgo.Session,
+	interaction *discordgo.InteractionCreate,
+	title string, message string,
+) {
+	embed := utils.BuildEmbedMessageTemplate()
+	embed.Title = title
+	embed.Description = message
+	embed.Color = 0x50C878
+	_, err := session.InteractionResponseEdit(
+		interaction.Interaction,
+		&discordgo.WebhookEdit{
+			Embeds: &[]*discordgo.MessageEmbed{embed},
+		},
+	)
 	if err != nil {
 		slog.Warn("failed to respond to interaction", "error", err)
 	}
 }
 
-// In your discord package
-
-func RespondToInteractionWithEmbed(
+func RespondToInteractionEmbedAndButtons(
 	session *discordgo.Session,
 	interaction *discordgo.InteractionCreate,
 	embed *discordgo.MessageEmbed,
 	components []discordgo.MessageComponent,
 ) {
+	embed.Color = 0x50C878
+	_, err := session.InteractionResponseEdit(
+		interaction.Interaction,
+		&discordgo.WebhookEdit{
+			Embeds:     &[]*discordgo.MessageEmbed{embed},
+			Components: &components,
+		},
+	)
+	if err != nil {
+		slog.Warn("failed to respond to interaction", "error", err)
+	}
+}
+
+func RespondToInteractionEmbedError(session *discordgo.Session, interaction *discordgo.InteractionCreate, errorMessage string) {
+	embed := utils.BuildEmbedMessageTemplate()
+	embed.Title = "❌ Error"
+	embed.Description = utils.Capitalize(errorMessage)
+	embed.Color = 0x50C878
+	var components []discordgo.MessageComponent
+
 	_, err := session.InteractionResponseEdit(
 		interaction.Interaction,
 		&discordgo.WebhookEdit{

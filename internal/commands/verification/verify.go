@@ -20,11 +20,11 @@ func VerifyAccount(ctx context.Context, s *discordgo.Session, i *discordgo.Inter
 	}
 
 	if verificationSnapshot == nil {
-		discord.RespondToInteraction(s, i, fmt.Sprintf("User **%s** doesn't have any pending verifications!", i.Member.User.Username))
+		discord.RespondToInteractionEmbedError(s, i, fmt.Sprintf("User **%s** doesn't have any pending verifications!", i.Member.User.Username))
 		return
 	}
 
-	var unverifiedAccount models.UnverifiedAccount
+	var unverifiedAccount models.Verification
 	err = verificationSnapshot.DataTo(&unverifiedAccount)
 	if err != nil {
 		slog.Error("error getting verification data", "error", err)
@@ -41,7 +41,7 @@ func VerifyAccount(ctx context.Context, s *discordgo.Session, i *discordgo.Inter
 				slog.Info("Verification removed from firestore successfully!")
 			}
 
-			_, err = firebase.AddVerifiedAccount(ctx, i.Member.User.Username, models.Account{
+			_, err = firebase.AddAccount(ctx, i.Member.User.Username, models.Account{
 				Username: unverifiedAccount.Username,
 				Platform: unverifiedAccount.Platform,
 				Link:     fmt.Sprintf("https://www.tiktok.com/@%s", unverifiedAccount.Username),
@@ -50,12 +50,12 @@ func VerifyAccount(ctx context.Context, s *discordgo.Session, i *discordgo.Inter
 
 			if err != nil {
 				slog.Error("error adding verified account", "error", err)
-				discord.RespondToInteraction(s, i, utils.Capitalize(err.Error()))
+				discord.RespondToInteractionEmbedError(s, i, err.Error())
 				return
 			}
-			discord.RespondToInteraction(s, i, fmt.Sprintf("Successfully verified **%s** (**%s**)!", unverifiedAccount.Username, unverifiedAccount.Platform))
+			discord.RespondToInteractionEmbed(s, i, "✅ Success", fmt.Sprintf("Successfully verified **%s** (**%s**)!", unverifiedAccount.Username, unverifiedAccount.Platform))
 		} else {
-			discord.RespondToInteraction(s, i, fmt.Sprintf("Please put **%s** on **%s** (**%s**) and then call '/verify-account' again", unverifiedAccount.Code, unverifiedAccount.Username, unverifiedAccount.Platform))
+			discord.RespondToInteractionEmbed(s, i, "⚠️ Warning", fmt.Sprintf("Please put **%s** on **%s** (**%s**) and then call '/verify-account' again", unverifiedAccount.Code, unverifiedAccount.Username, unverifiedAccount.Platform))
 		}
 	}
 
