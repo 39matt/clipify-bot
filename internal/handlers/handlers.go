@@ -9,7 +9,6 @@ import (
 	"clipping-bot/internal/commands/verification"
 	"clipping-bot/internal/commands/video"
 	"clipping-bot/internal/discord"
-	"clipping-bot/internal/firebase"
 	"clipping-bot/internal/globalctx"
 	"github.com/bwmarrin/discordgo"
 	"log/slog"
@@ -42,22 +41,22 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 		slog.Warn("failed to defer interaction", "error", err)
 	}
 
-	exists, err := firebase.UserExists(ctx, i.Member.User.Username)
-	if err != nil {
-		slog.Warn("failed to check if user exists", "error", err)
-		discord.RespondToInteractionEmbedError(s, i, err.Error())
-		return
-	}
-	if i.ApplicationCommandData().Name != "register" && !exists {
-		slog.Error("user isn't registered")
-		user.Register(ctx, s, i)
-	}
+	//exists, err := firebase.UserExists(ctx, i.Member.User.Username)
+	//if err != nil {
+	//	slog.Warn("failed to check if user exists", "error", err)
+	//	discord.RespondToInteractionEmbedError(s, i, err.Error())
+	//	return
+	//}
+	//if i.ApplicationCommandData().Name != "register" && !exists {
+	//	slog.Error("user isn't registered")
+	//	user.Register(ctx, s, i)
+	//}
 
 	switch i.ApplicationCommandData().Name {
 	case "test":
 		test.Test(s, i)
-	//case "register":
-	//	user.Register(ctx, s, i)
+	case "register":
+		user.Register(ctx, s, i)
 	case "add-account":
 		account.AddAccount(ctx, s, i)
 	case "verify-account":

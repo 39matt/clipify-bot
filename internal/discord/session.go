@@ -44,10 +44,10 @@ var (
 			Name:        "remove-verification",
 			Description: "Remove active verification",
 		},
-		//{
-		//	Name:        "register",
-		//	Description: "Register an account (linked to your discord account)",
-		//},
+		{
+			Name:        "register",
+			Description: "Register an account (linked to your discord account)",
+		},
 		{
 			Name:        "add-video",
 			Description: "Track a new video",
