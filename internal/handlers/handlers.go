@@ -70,5 +70,7 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 		stats.GetStats(ctx, s, i)
 	case "create-campaign":
 		campaign.AddCampaign(ctx, s, i)
+	default:
+		discord.RespondToInteractionEmbedError(s, i, "Unknown command")
 	}
 }

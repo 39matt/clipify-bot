@@ -55,6 +55,28 @@ func RespondToInteractionEmbedAndButtons(
 	}
 }
 
+func RespondToButtonInteractionEmbedAndButtons(
+	session *discordgo.Session,
+	interaction *discordgo.InteractionCreate,
+	embed *discordgo.MessageEmbed,
+	components []discordgo.MessageComponent,
+) {
+	embed.Color = 0x50C878
+	err := session.InteractionRespond(
+		interaction.Interaction,
+		&discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseUpdateMessage,
+			Data: &discordgo.InteractionResponseData{
+				Embeds:     []*discordgo.MessageEmbed{embed},
+				Components: components,
+			},
+		},
+	)
+	if err != nil {
+		slog.Warn("failed to respond to interaction", "error", err)
+	}
+}
+
 func RespondToInteractionEmbedError(session *discordgo.Session, interaction *discordgo.InteractionCreate, errorMessage string) {
 	embed := utils.BuildEmbedMessageTemplate()
 	embed.Title = "❌ Error"

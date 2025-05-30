@@ -13,25 +13,15 @@ import (
 )
 
 func AddAccount(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var platform, accountname string
+	var accountname string
+	var platform models.Platform
 	for _, option := range i.ApplicationCommandData().Options {
 		switch option.Name {
 		case "platform":
-			platform = option.StringValue()
+			platform = models.Platform(option.StringValue())
 		case "account-name":
 			accountname = option.StringValue()
 		}
-	}
-
-	can, err := firebase.CanUserAddTikTokAccount(ctx, i.Member.User.Username)
-	if err != nil {
-		slog.Error("can user add account function failed", "error", err)
-		return
-	}
-	if !can {
-		slog.Error("user already has 3 accounts", "error", err)
-		discord.RespondToInteractionEmbed(s, i, "⚠️ Warning", "You already have 3 TikTok accounts bound to your user! Please remove one if you want to add another one.")
-		return
 	}
 
 	accountExists, accountErr := firebase.IsAccountExists(ctx, i.Member.User.Username, accountname, platform)
@@ -42,6 +32,17 @@ func AddAccount(ctx context.Context, s *discordgo.Session, i *discordgo.Interact
 	}
 	if accountExists {
 		discord.RespondToInteractionEmbed(s, i, "⚠️ Warning", fmt.Sprintf("Account **%s** (**%s**) is already in use", accountname, platform))
+		return
+	}
+
+	can, err := firebase.CanUserAddAccount(ctx, i.Member.User.Username, platform)
+	if err != nil {
+		slog.Error("can user add account function failed", "error", err)
+		return
+	}
+	if !can {
+		slog.Error("user already has 3 accounts", "error", err)
+		discord.RespondToInteractionEmbed(s, i, "⚠️ Warning", "You already have 3 TikTok accounts bound to your user! Please remove one if you want to add another one.")
 		return
 	}
 

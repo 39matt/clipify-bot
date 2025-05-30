@@ -41,7 +41,7 @@ func Load() {
 		BotGuildJoinMessage: os.Getenv("BOT_GUILD_JOIN_MESSAGE"),
 		DiscordToken:        os.Getenv("DISCORD_TOKEN"),
 		YoutubeApiKey:       os.Getenv("YOUTUBE_API_KEY"),
-		RapidApiKey:         os.Getenv("RAPIDAPI_TIKTOK_API_KEY"),
+		RapidApiKey:         os.Getenv("RAPIDAPI_API_KEY"),
 	}
 }
 

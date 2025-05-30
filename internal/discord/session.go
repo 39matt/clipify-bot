@@ -160,7 +160,7 @@ func RegisterCommands() {
 			}
 			options := make([]*discordgo.ApplicationCommandOption, len(cmd.Options))
 			copy(options, cmd.Options)
-			options[1].Choices = nil
+			options[0].Choices = nil
 			for index, campaign := range campaigns {
 				if index >= 25 {
 					break
@@ -169,7 +169,7 @@ func RegisterCommands() {
 					Name:  fmt.Sprintf("%s - %s", campaign.Influencer, campaign.Activity),
 					Value: ids[index],
 				}
-				options[1].Choices = append(options[1].Choices, choice)
+				options[0].Choices = append(options[0].Choices, choice)
 			}
 			cmd.Options = options
 		}

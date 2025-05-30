@@ -36,7 +36,7 @@ func GetVerificationByDiscordUsername(ctx context.Context, discordUsername strin
 	return dataSnapshot, nil
 }
 
-func AddVerification(ctx context.Context, discordUsername string, accountName string, platform string, code int) (*firestore.DocumentRef, error) {
+func AddVerification(ctx context.Context, discordUsername string, accountName string, platform models.Platform, code int) (*firestore.DocumentRef, error) {
 	if !IsInitialized() {
 		slog.Error("firebase not initialized")
 		return nil, errGeneric
@@ -54,7 +54,7 @@ func AddVerification(ctx context.Context, discordUsername string, accountName st
 		slog.Error("invalid verification code", "code", code)
 		return nil, fmt.Errorf("invalid verification code")
 	}
-	
+
 	verificationExists, verificationErr := GetVerificationByDiscordUsername(ctx, discordUsername)
 
 	if verificationErr != nil {

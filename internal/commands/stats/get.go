@@ -14,27 +14,26 @@ import (
 
 func GetStats(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	username := i.Member.User.Username
-	accountNames, err := firebase.GetUserAccountNames(ctx, username)
-	if err != nil || accountNames == nil {
+	accounts, err := firebase.GetUserAccounts(ctx, username)
+	if err != nil || accounts == nil {
 		discord.RespondToInteractionEmbedError(s, i, fmt.Sprintf("No accounts found for **%s**", username))
 		return
 	}
 
 	page := 0
-	platform := "TikTok"
 
-	videos, _ := firebase.GetAllAccountVideos(ctx, username, accountNames[page], platform)
+	videos, _ := firebase.GetAllAccountVideos(ctx, username, accounts[page].Username, accounts[page].Platform)
 
-	embed := buildAccountStatsEmbed(username, accountNames[page], platform, videos)
-	components := buildAccountNavComponents(page, len(accountNames))
+	embed := buildAccountStatsEmbed(accounts[page].Username, accounts[page].Platform, videos)
+	components := buildAccountNavComponents(page, len(accounts))
 
 	discord.RespondToInteractionEmbedAndButtons(s, i, embed, components)
 }
 
 func HandleAccountStatsButton(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	username := i.Member.User.Username
-	accountNames, err := firebase.GetUserAccountNames(ctx, username)
-	if err != nil || accountNames == nil {
+	accounts, err := firebase.GetUserAccounts(ctx, username)
+	if err != nil || accounts == nil {
 		discord.RespondToInteractionEmbedError(s, i, fmt.Sprintf("No accounts found for **%s**", username))
 		return
 	}
@@ -52,22 +51,25 @@ func HandleAccountStatsButton(ctx context.Context, s *discordgo.Session, i *disc
 
 	if action == "prev" && page > 0 {
 		page--
-	} else if action == "next" && page < len(accountNames)-1 {
+	} else if action == "next" && page < len(accounts)-1 {
 		page++
 	}
 
-	platform := "TikTok"
-	videos, _ := firebase.GetAllAccountVideos(ctx, username, accountNames[page], platform)
+	videos, _ := firebase.GetAllAccountVideos(ctx, username, accounts[page].Username, accounts[page].Platform)
 
-	embed := buildAccountStatsEmbed(username, accountNames[page], platform, videos)
-	components := buildAccountNavComponents(page, len(accountNames))
+	embed := buildAccountStatsEmbed(accounts[page].Username, accounts[page].Platform, videos)
+	components := buildAccountNavComponents(page, len(accounts))
 
-	discord.RespondToInteractionEmbedAndButtons(s, i, embed, components)
+	discord.RespondToButtonInteractionEmbedAndButtons(s, i, embed, components)
 }
 
-func buildAccountStatsEmbed(username, accountName, platform string, videos []models.Video) *discordgo.MessageEmbed {
+func buildAccountStatsEmbed(accountName string, platform models.Platform, videos []models.Video) *discordgo.MessageEmbed {
 	var fields []*discordgo.MessageEmbedField
+	var totalViews = 0
 
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Inline: false,
+	})
 	if len(videos) == 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:   fmt.Sprintf("%s - %s", platform, accountName),
@@ -75,10 +77,15 @@ func buildAccountStatsEmbed(username, accountName, platform string, videos []mod
 			Inline: false,
 		})
 	} else {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Inline: false,
+		})
+
 		sort.Slice(videos, func(i, j int) bool {
 			return videos[i].Views > videos[j].Views
 		})
 		for idx, video := range videos {
+			totalViews += video.Views
 			name := video.Name
 			if len(name) > 30 {
 				name = name[:27] + "..."
@@ -99,9 +106,10 @@ func buildAccountStatsEmbed(username, accountName, platform string, videos []mod
 			})
 		}
 	}
+	fields[0].Value = fmt.Sprintf("Total views - %s", formatKM(totalViews))
 
 	return &discordgo.MessageEmbed{
-		Title:  fmt.Sprintf("**📊 Stats**"),
+		Title:  fmt.Sprintf("**📊 Stats**\n%s (%s)", accountName, platform),
 		Color:  0x50C878,
 		Fields: fields,
 		Footer: &discordgo.MessageEmbedFooter{
@@ -144,4 +152,15 @@ func formatNumber(n int) string {
 		result += string(c)
 	}
 	return result
+}
+
+func formatKM(n int) string {
+	switch {
+	case n >= 1_000_000:
+		return fmt.Sprintf("%.1fM", float64(n)/1_000_000)
+	case n >= 1_000:
+		return fmt.Sprintf("%.1fK", float64(n)/1_000)
+	default:
+		return fmt.Sprintf("%d", n)
+	}
 }

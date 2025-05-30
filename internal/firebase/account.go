@@ -12,7 +12,7 @@ import (
 
 var accountLimit = 3
 
-func IsAccountExists(ctx context.Context, discordUsername string, accountName string, platform string) (bool, error) {
+func IsAccountExists(ctx context.Context, discordUsername string, accountName string, platform models.Platform) (bool, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase not initialized")
 		return false, errGeneric
@@ -38,7 +38,7 @@ func IsAccountExists(ctx context.Context, discordUsername string, accountName st
 	return true, nil
 }
 
-func GetAccountSnapshotByNameAndPlatform(ctx context.Context, discordUsername string, accountName string, platform string) (*firestore.DocumentSnapshot, error) {
+func GetAccountSnapshotByNameAndPlatform(ctx context.Context, discordUsername string, accountName string, platform models.Platform) (*firestore.DocumentSnapshot, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase not initialized")
 		return nil, errGeneric
@@ -86,7 +86,7 @@ func AddAccount(ctx context.Context, discordUsername string, account models.Acco
 	return ref, nil
 }
 
-func GetAllAccountVideos(ctx context.Context, discordUsername string, accountName string, platform string) ([]models.Video, error) {
+func GetAllAccountVideos(ctx context.Context, discordUsername string, accountName string, platform models.Platform) ([]models.Video, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase instance not initialized")
 		return nil, errGeneric
@@ -122,7 +122,7 @@ func GetAllAccountVideos(ctx context.Context, discordUsername string, accountNam
 	return videos, nil
 }
 
-func GetUserAccountNames(ctx context.Context, discordUsername string) ([]string, error) {
+func GetUserAccounts(ctx context.Context, discordUsername string) ([]models.Account, error) {
 	if !IsInitialized() {
 		slog.Error("firebase not initialized")
 		return nil, errGeneric
@@ -135,7 +135,7 @@ func GetUserAccountNames(ctx context.Context, discordUsername string) ([]string,
 	docIter := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Documents(ctx)
 	defer docIter.Stop()
 
-	var accountNames []string
+	var accounts []models.Account
 	for {
 		doc, iterErr := docIter.Next()
 		if errors.Is(iterErr, iterator.Done) {
@@ -152,17 +152,17 @@ func GetUserAccountNames(ctx context.Context, discordUsername string) ([]string,
 			continue
 		}
 
-		accountNames = append(accountNames, account.Username)
+		accounts = append(accounts, account)
 	}
 
-	if len(accountNames) == 0 {
+	if len(accounts) == 0 {
 		return nil, nil
 	}
 
-	return accountNames, nil
+	return accounts, nil
 }
 
-func CanUserAddTikTokAccount(ctx context.Context, discordUsername string) (bool, error) {
+func CanUserAddAccount(ctx context.Context, discordUsername string, platform models.Platform) (bool, error) {
 	if !IsInitialized() {
 		slog.Error("firebase not initialized")
 		return false, errGeneric
@@ -191,7 +191,7 @@ func CanUserAddTikTokAccount(ctx context.Context, discordUsername string) (bool,
 			slog.Error("Error parsing account data", "error", err, "docID", doc.Ref.ID)
 			continue
 		}
-		if account.Platform == "TikTok" {
+		if account.Platform == platform {
 			numberOfAccounts++
 		}
 	}

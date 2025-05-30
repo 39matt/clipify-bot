@@ -14,4 +14,8 @@ var PlatformChoices = []*discordgo.ApplicationCommandOptionChoice{
 		Name:  "TikTok",
 		Value: string(PlatformTikTok),
 	},
+	{
+		Name:  "Instagram",
+		Value: string(PlatformInstagram),
+	},
 }

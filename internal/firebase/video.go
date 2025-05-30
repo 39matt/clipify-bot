@@ -8,53 +8,21 @@ import (
 	"fmt"
 	"google.golang.org/api/iterator"
 	"log/slog"
-	"strings"
 )
 
-func AddVideo(ctx context.Context, discordUsername string, video models.Video) (*firestore.DocumentRef, error) {
+func AddVideo(ctx context.Context, discordUsername string, author string, platform models.Platform, video models.Video) (*firestore.DocumentRef, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase instance not initialized")
 		return nil, fmt.Errorf("firebase instance not initialized")
 	}
-	if video.Comments < 0 {
-		slog.Error("Comments must be greater than 0")
-		return nil, fmt.Errorf("comments must be greater than 0")
-	}
-	if video.Name == "" {
-		slog.Error("Name must be set")
-		return nil, fmt.Errorf("name must be set")
-	}
-	if video.Link == "" {
-		slog.Error("Link must be set")
-		return nil, fmt.Errorf("link must be set")
-	}
-	if video.Shares < 0 {
-		slog.Error("Shares must be greater than 0")
-		return nil, fmt.Errorf("shares must be greater than 0")
-	}
-	if video.Views < 0 {
-		slog.Error("Views must be greater than 0")
-		return nil, fmt.Errorf("views must be greater than 0")
-	}
 
-	var platform string
-	if strings.Contains(video.Link, "tiktok") {
-		platform = "TikTok"
-	} else if strings.Contains(video.Link, "instagram") {
-		platform = "Instagram"
-	} else {
-		slog.Error("Link is not TT or IG")
-		return nil, fmt.Errorf("link is not Tiktok or Instagram link")
-	}
-
-	accountName := strings.Split(video.Link, "/")[3][1:]
-	accountSnapshot, accountErr := GetAccountSnapshotByNameAndPlatform(ctx, discordUsername, accountName, platform)
+	accountSnapshot, accountErr := GetAccountSnapshotByNameAndPlatform(ctx, discordUsername, author, platform)
 	if accountErr != nil {
 		slog.Error("error getting account", "error", accountErr)
 		return nil, errGeneric
 	}
 
-	existingVideo, err := GetAccountVideoByLink(ctx, discordUsername, video.Link)
+	existingVideo, err := getAccountVideoByLink(ctx, discordUsername, accountSnapshot, video.Link)
 	if err != nil {
 		slog.Error("error getting existing video", "error", err)
 		return nil, errGeneric
@@ -63,6 +31,7 @@ func AddVideo(ctx context.Context, discordUsername string, video models.Video) (
 		slog.Error("Video already exists")
 		return nil, fmt.Errorf("video is already added")
 	}
+
 	ref, _, err := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Add(ctx, video)
 	if err != nil {
 		slog.Error("Failed to add video", "error", err)
@@ -71,7 +40,7 @@ func AddVideo(ctx context.Context, discordUsername string, video models.Video) (
 	return ref, nil
 }
 
-func GetAccountVideoByLink(ctx context.Context, discordUsername string, videoLink string) (*models.Video, error) {
+func getAccountVideoByLink(ctx context.Context, discordUsername string, accountSnapshot *firestore.DocumentSnapshot, videoLink string) (*models.Video, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase instance not initialized")
 		return nil, errGeneric
@@ -81,14 +50,10 @@ func GetAccountVideoByLink(ctx context.Context, discordUsername string, videoLin
 		return nil, errGeneric
 	}
 
-	platform := "TikTok"
-	if strings.Contains(videoLink, "instagram") {
-		platform = "Instagram"
-	}
-	accountName := strings.Split(videoLink, "/")[3][1:]
-	accountSnapshot, accountErr := GetAccountSnapshotByNameAndPlatform(ctx, discordUsername, accountName, platform)
-	if accountErr != nil {
-		slog.Error("error getting account", "error", accountErr)
+	var account models.Account
+	parseErr := accountSnapshot.DataTo(&account)
+	if parseErr != nil {
+		slog.Error("Failed to parse account", "error", parseErr)
 		return nil, errGeneric
 	}
 
