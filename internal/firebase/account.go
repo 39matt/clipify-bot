@@ -12,7 +12,7 @@ import (
 
 var accountLimit = 3
 
-func IsAccountExists(ctx context.Context, discordUsername string, accountName string, platform models.Platform) (bool, error) {
+func IsAccountAlreadyAdded(ctx context.Context, discordUsername string, accountName string, platform models.Platform) (bool, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase not initialized")
 		return false, errGeneric
@@ -36,6 +36,19 @@ func IsAccountExists(ctx context.Context, discordUsername string, accountName st
 	}
 
 	return true, nil
+}
+
+func IsAccountExists(ctx context.Context, platform models.Platform, accountName string) (bool, error) {
+	query := FirestoreClient.CollectionGroup("accounts").
+		Where("platform", "==", platform).
+		Where("username", "==", accountName).
+		Limit(1)
+
+	docs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return false, err
+	}
+	return len(docs) > 0, nil
 }
 
 func GetAccountSnapshotByNameAndPlatform(ctx context.Context, discordUsername string, accountName string, platform models.Platform) (*firestore.DocumentSnapshot, error) {

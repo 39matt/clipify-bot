@@ -24,13 +24,19 @@ func AddAccount(ctx context.Context, s *discordgo.Session, i *discordgo.Interact
 		}
 	}
 
-	accountExists, accountErr := firebase.IsAccountExists(ctx, i.Member.User.Username, accountname, platform)
+	accountAdded, accountErr := firebase.IsAccountAlreadyAdded(ctx, i.Member.User.Username, accountname, platform)
 	if accountErr != nil {
 		slog.Error("Account check failed", accountErr)
 		discord.RespondToInteractionEmbedError(s, i, accountErr.Error())
-
 	}
-	if accountExists {
+
+	accountExists, existsErr := firebase.IsAccountExists(ctx, platform, accountname)
+	if existsErr != nil {
+		slog.Error("Account check failed", accountErr)
+		discord.RespondToInteractionEmbedError(s, i, accountErr.Error())
+	}
+	
+	if accountAdded || accountExists {
 		discord.RespondToInteractionEmbed(s, i, "⚠️ Warning", fmt.Sprintf("Account **%s** (**%s**) is already in use", accountname, platform))
 		return
 	}
