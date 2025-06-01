@@ -8,7 +8,11 @@ import (
 	"fmt"
 	"google.golang.org/api/iterator"
 	"log/slog"
+	"strconv"
+	"time"
 )
+
+var videoAgeLimitHours = 48.
 
 func AddVideo(ctx context.Context, discordUsername string, author string, platform models.Platform, video models.Video) (*firestore.DocumentRef, error) {
 	if !IsInitialized() {
@@ -30,6 +34,16 @@ func AddVideo(ctx context.Context, discordUsername string, author string, platfo
 	if existingVideo != nil {
 		slog.Error("Video already exists")
 		return nil, fmt.Errorf("video is already added")
+	}
+
+	createdAtUnix, parseErr := strconv.ParseInt(video.CreatedAt, 10, 64)
+	if parseErr != nil {
+		slog.Error("error parsing video created_at", "error", parseErr)
+		return nil, errGeneric
+	}
+	if time.Now().Sub(time.Unix(createdAtUnix, 0)).Hours() > videoAgeLimitHours {
+		slog.Error(fmt.Sprintf("video is older than %.0f hours", videoAgeLimitHours))
+		return nil, fmt.Errorf("video is older than %.0f hours", videoAgeLimitHours)
 	}
 
 	ref, _, err := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Doc(accountSnapshot.Ref.ID).Collection("videos").Add(ctx, video)
