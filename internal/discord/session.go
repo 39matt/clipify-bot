@@ -37,6 +37,25 @@ var (
 			},
 		},
 		{
+			Name:        "remove-account",
+			Description: "Remove an existing account",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "platform",
+					Description: "Platform of the account (e.g. TikTok, Instagram)",
+					Choices:     models.PlatformChoices,
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "account-name",
+					Description: "Name of the account",
+					Required:    true,
+				},
+			},
+		},
+		{
 			Name:        "verify-account",
 			Description: "Check if bio has the verification code",
 		},

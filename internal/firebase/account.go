@@ -99,6 +99,32 @@ func AddAccount(ctx context.Context, discordUsername string, account models.Acco
 	return ref, nil
 }
 
+func RemoveAccount(ctx context.Context, discordUsername string, accountName string, platform models.Platform) error {
+	if !IsInitialized() {
+		slog.Error("Firebase not initialized")
+		return errGeneric
+	}
+	if accountName == "" {
+		slog.Error("Account name cannot be empty")
+		return fmt.Errorf("account name cannot be empty")
+	}
+
+	accountSnapshot, getErr := GetAccountSnapshotByNameAndPlatform(ctx, discordUsername, accountName, platform)
+	if getErr != nil {
+		return getErr
+	}
+	if accountSnapshot == nil {
+		return fmt.Errorf("account **%s (%s)** does not exist", accountName, platform)
+	}
+
+	_, deleteErr := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Doc(accountSnapshot.Ref.ID).Delete(ctx)
+	if deleteErr != nil {
+		slog.Error("Failed to delete account", "error", deleteErr)
+		return deleteErr
+	}
+	return nil
+}
+
 func GetAllAccountVideos(ctx context.Context, discordUsername string, accountName string, platform models.Platform) ([]models.Video, error) {
 	if !IsInitialized() {
 		slog.Error("Firebase instance not initialized")

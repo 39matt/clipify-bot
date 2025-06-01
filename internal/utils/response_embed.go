@@ -7,7 +7,7 @@ import (
 
 func BuildEmbedMessageTemplate() *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
-		Footer: &discordgo.MessageEmbedFooter{Text: "Clipify bot 2025",
+		Footer: &discordgo.MessageEmbedFooter{Text: "© Clipify 2025",
 			IconURL: "https://ibb.co/wNsJm4gj",
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
