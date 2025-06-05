@@ -51,24 +51,11 @@ func AddUser(ctx context.Context, discordUsername string) (*firestore.DocumentRe
 		return nil, errGeneric
 	}
 
-	userSnapshot, userErr := FirestoreClient.Collection("users").Doc(discordUsername).Get(ctx)
-	if userErr != nil && status.Code(userErr) != codes.NotFound {
-		slog.Error("failed to get user", "error", userErr)
-		return nil, errGeneric
-	}
-
-	if userSnapshot.Exists() {
-		slog.Info("User already exists", "user", userSnapshot.Data())
-		return nil, fmt.Errorf("user %s is already registered", discordUsername)
-	}
-
-	data := models.User{}
 	docRef := FirestoreClient.Collection("users").Doc(discordUsername)
-
-	_, createErr := docRef.Create(ctx, data)
-	if createErr != nil {
-		slog.Error("Failed to add user", "error", createErr)
-		return nil, errGeneric
+	_, err := docRef.Create(ctx, models.User{})
+	if status.Code(err) == codes.AlreadyExists {
+		slog.Info("User already exists", "user", docRef.ID)
+		return nil, fmt.Errorf("user **%s** is already registered", discordUsername)
 	}
 
 	slog.Info("User added to Firestore successfully", "username", discordUsername)
