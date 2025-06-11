@@ -29,26 +29,37 @@ func init() {
 
 // Load loads the environment variables from the .env file.
 func Load() {
-	err := godotenv.Load()
-	if err != nil {
-		slog.Error("failed to load environment variables")
+	appEnv := os.Getenv("APP_ENVIRONMENT")
+	if appEnv == "" || appEnv == "DEVELOPMENT" {
+		// Load .env file only in development mode
+		err := godotenv.Load()
+		if err != nil {
+			slog.Error("failed to load environment variables from .env file")
+		}
 	}
 
 	config = &configuration{
-		AppEnvironment:      os.Getenv("APP_ENVIRONMENT"),
-		BotPrefix:           os.Getenv("BOT_PREFIX"),
-		BotStatus:           os.Getenv("BOT_STATUS"),
-		BotGuildJoinMessage: os.Getenv("BOT_GUILD_JOIN_MESSAGE"),
-		DiscordToken:        os.Getenv("DISCORD_TOKEN"),
-		YoutubeApiKey:       os.Getenv("YOUTUBE_API_KEY"),
-		RapidApiKey:         os.Getenv("RAPIDAPI_API_KEY"),
+		AppEnvironment: getEnvOrPanic("APP_ENVIRONMENT"),
+		//BotPrefix:           getEnvOrPanic("BOT_PREFIX"),
+		//BotStatus:           getEnvOrPanic("BOT_STATUS"),
+		//BotGuildJoinMessage: getEnvOrPanic("BOT_GUILD_JOIN_MESSAGE"),
+		DiscordToken: getEnvOrPanic("DISCORD_TOKEN"),
+		RapidApiKey:  getEnvOrPanic("RAPIDAPI_API_KEY"),
 	}
 }
 
-//func GetAppEnvironment() string {
-//	return config.AppEnvironment
-//}
+func getEnvOrPanic(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		slog.Error("missing required environment variable", slog.String("key", key))
+		panic("missing required environment variable: " + key)
+	}
+	return value
+}
 
+//	func GetAppEnvironment() string {
+//		return config.AppEnvironment
+//	}
 func IsAppEnvironment(environments ...string) bool {
 	if len(environments) == 0 {
 		return config.AppEnvironment == environments[0]

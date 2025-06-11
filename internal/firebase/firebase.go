@@ -30,6 +30,7 @@ func initializeOnce() {
 		slog.Error("failed to load environment variables", "error", err)
 		return
 	}
+
 	ctx, cancel := globalctx.ForRequest()
 	defer cancel()
 
