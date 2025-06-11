@@ -5,7 +5,6 @@ import (
 	"cloud.google.com/go/firestore"
 	"errors"
 	firebase "firebase.google.com/go"
-	"github.com/joho/godotenv"
 	"google.golang.org/api/option"
 	"log/slog"
 	"sync"
@@ -25,12 +24,6 @@ func Initialize() {
 }
 
 func initializeOnce() {
-	err := godotenv.Load()
-	if err != nil {
-		slog.Error("failed to load environment variables", "error", err)
-		return
-	}
-
 	ctx, cancel := globalctx.ForRequest()
 	defer cancel()
 
@@ -39,7 +32,7 @@ func initializeOnce() {
 	mu.Lock()
 	defer mu.Unlock()
 
-	firebaseApp, err = firebase.NewApp(ctx, nil, opt)
+	firebaseApp, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
 		slog.Error("failed to initialize firebase app", "error", err)
 		return
