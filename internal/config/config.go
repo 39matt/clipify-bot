@@ -1,9 +1,8 @@
 package config
 
 import (
-	"log/slog"
-
 	"github.com/joho/godotenv"
+	"log/slog"
 
 	"os"
 )
