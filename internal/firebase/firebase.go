@@ -95,5 +95,5 @@ func Close() {
 func IsInitialized() bool {
 	mu.RLock()
 	defer mu.RUnlock()
-	return FirestoreClient != nil && firebaseApp != nil
+	return FirestoreClient != nil
 }
