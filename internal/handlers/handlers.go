@@ -36,6 +36,9 @@ func InteractionCreateHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: 64,
+		},
 	})
 	if err != nil {
 		slog.Warn("failed to defer interaction", "error", err)

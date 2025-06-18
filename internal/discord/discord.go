@@ -6,16 +6,6 @@ import (
 	"log/slog"
 )
 
-//func RespondToInteraction(session *discordgo.Session, interaction *discordgo.InteractionCreate, responseMessage string) {
-//	message := utils.Capitalize(responseMessage)
-//	_, err := session.InteractionResponseEdit(interaction.Interaction, &discordgo.WebhookEdit{
-//		Content: &message,
-//	})
-//	if err != nil {
-//		slog.Warn("failed to respond to interaction", "error", err)
-//	}
-//}
-
 func RespondToInteractionEmbed(
 	session *discordgo.Session,
 	interaction *discordgo.InteractionCreate,
