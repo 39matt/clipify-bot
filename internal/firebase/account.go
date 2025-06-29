@@ -39,7 +39,7 @@ func IsAccountAlreadyAdded(ctx context.Context, discordUsername string, accountN
 }
 
 func IsAccountExists(ctx context.Context, platform models.Platform, accountName string) (bool, error) {
-	query := FirestoreClient.CollectionGroup("accounts").
+	query := FirestoreClient.Collection("accounts").
 		Where("platform", "==", platform).
 		Where("username", "==", accountName).
 		Limit(1)
@@ -91,6 +91,12 @@ func AddAccount(ctx context.Context, discordUsername string, account models.Acco
 	}
 
 	ref, _, err := FirestoreClient.Collection("users").Doc(discordUsername).Collection("accounts").Add(ctx, account)
+	if err != nil {
+		slog.Error("Failed to add verified account", "error", err)
+		return nil, errGeneric
+	}
+
+	ref, _, err = FirestoreClient.Collection("accounts").Add(ctx, account)
 	if err != nil {
 		slog.Error("Failed to add verified account", "error", err)
 		return nil, errGeneric
