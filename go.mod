@@ -1,4 +1,4 @@
-module clipping-bot
+module clipify-bot
 
 go 1.23.0
 
