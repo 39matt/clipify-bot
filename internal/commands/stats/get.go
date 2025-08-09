@@ -1,9 +1,9 @@
 package stats
 
 import (
-	"clipping-bot/internal/discord"
-	"clipping-bot/internal/firebase"
-	"clipping-bot/internal/models"
+	"clipify-bot/internal/discord"
+	"clipify-bot/internal/firebase"
+	"clipify-bot/internal/models"
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"

@@ -1,8 +1,8 @@
 package verification
 
 import (
-	"clipping-bot/internal/discord"
-	"clipping-bot/internal/firebase"
+	"clipify-bot/internal/discord"
+	"clipify-bot/internal/firebase"
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"

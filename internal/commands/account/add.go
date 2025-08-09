@@ -1,9 +1,9 @@
 package account
 
 import (
-	"clipping-bot/internal/discord"
-	"clipping-bot/internal/firebase"
-	"clipping-bot/internal/models"
+	"clipify-bot/internal/discord"
+	"clipify-bot/internal/firebase"
+	"clipify-bot/internal/models"
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -35,7 +35,7 @@ func AddAccount(ctx context.Context, s *discordgo.Session, i *discordgo.Interact
 		slog.Error("Account check failed", accountErr)
 		discord.RespondToInteractionEmbedError(s, i, accountErr.Error())
 	}
-	
+
 	if accountAdded || accountExists {
 		discord.RespondToInteractionEmbed(s, i, "⚠️ Warning", fmt.Sprintf("Account **%s** (**%s**) is already in use", accountname, platform))
 		return

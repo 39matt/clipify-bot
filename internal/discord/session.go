@@ -1,10 +1,10 @@
 package discord
 
 import (
-	"clipping-bot/internal/config"
-	"clipping-bot/internal/firebase"
-	"clipping-bot/internal/globalctx"
-	"clipping-bot/internal/models"
+	"clipify-bot/internal/config"
+	"clipify-bot/internal/firebase"
+	"clipify-bot/internal/globalctx"
+	"clipify-bot/internal/models"
 	"fmt"
 	"log/slog"
 

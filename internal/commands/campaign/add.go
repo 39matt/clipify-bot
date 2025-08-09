@@ -1,10 +1,10 @@
 package campaign
 
 import (
-	"clipping-bot/internal/discord"
-	"clipping-bot/internal/firebase"
-	"clipping-bot/internal/models"
-	"clipping-bot/internal/utils"
+	"clipify-bot/internal/discord"
+	"clipify-bot/internal/firebase"
+	"clipify-bot/internal/models"
+	"clipify-bot/internal/utils"
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"

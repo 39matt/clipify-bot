@@ -1,7 +1,7 @@
 package test
 
 import (
-	"clipping-bot/internal/discord"
+	"clipify-bot/internal/discord"
 	"github.com/bwmarrin/discordgo"
 )
 

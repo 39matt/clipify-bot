@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"clipping-bot/internal/config"
-	"clipping-bot/internal/models"
+	"clipify-bot/internal/config"
+	"clipify-bot/internal/models"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -131,7 +131,7 @@ func GetInstagramVideoInfo(videoId string) (models.Video, error) {
 
 	req.Header.Add("x-rapidapi-key", apiKey)
 	req.Header.Add("x-rapidapi-host", "instagram-looter2.p.rapidapi.com")
-	
+
 	client := &http.Client{Timeout: time.Second * 10}
 
 	res, httpErr := client.Do(req)

@@ -1,7 +1,7 @@
 package discord
 
 import (
-	"clipping-bot/internal/utils"
+	"clipify-bot/internal/utils"
 	"github.com/bwmarrin/discordgo"
 	"log/slog"
 )

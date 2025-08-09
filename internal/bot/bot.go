@@ -1,10 +1,10 @@
 package bot
 
 import (
-	"clipping-bot/internal/config"
-	"clipping-bot/internal/discord"
-	"clipping-bot/internal/firebase"
-	"clipping-bot/internal/handlers"
+	"clipify-bot/internal/config"
+	"clipify-bot/internal/discord"
+	"clipify-bot/internal/firebase"
+	"clipify-bot/internal/handlers"
 	"fmt"
 	"os"
 	"os/signal"

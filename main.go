@@ -1,7 +1,7 @@
 package main
 
 import (
-	"clipping-bot/internal/bot"
+	"clipify-bot/internal/bot"
 )
 
 func main() {

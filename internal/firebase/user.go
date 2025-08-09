@@ -1,7 +1,7 @@
 package firebase
 
 import (
-	"clipping-bot/internal/models"
+	"clipify-bot/internal/models"
 	"cloud.google.com/go/firestore"
 	"context"
 	"fmt"

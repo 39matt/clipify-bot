@@ -1,7 +1,7 @@
 package firebase
 
 import (
-	"clipping-bot/internal/globalctx"
+	"clipify-bot/internal/globalctx"
 	"cloud.google.com/go/firestore"
 	"encoding/base64"
 	"encoding/json"
