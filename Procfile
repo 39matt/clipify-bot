@@ -1,1 +1,1 @@
-worker: ./clipify-bot
+worker: ./clipping-bot
