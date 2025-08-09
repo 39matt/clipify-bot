@@ -1,1 +1,1 @@
-worker: ls -la && ./clipify-bot
+worker: ./bin/clipping-bot
