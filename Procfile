@@ -1,1 +1,1 @@
-worker: ls -la bin && ./clipify-bot
+worker: ls -la bin && ./bin/clipify-bot
