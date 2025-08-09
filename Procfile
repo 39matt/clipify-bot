@@ -1,1 +1,1 @@
-worker: ./clipping-bot
+worker: go run .
