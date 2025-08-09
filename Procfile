@@ -1,1 +1,1 @@
-worker: ./clipify-bot
+worker: ls -la && ./clipify-bot
